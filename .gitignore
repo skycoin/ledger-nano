@@ -1,0 +1,11 @@
+# TextEditors files and folders
+.vscode/
+.idea/
+*.iml
+
+# Binaries
+bin/
+cmake-build-debug/
+debug/
+dep/
+obj/
