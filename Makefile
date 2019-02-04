@@ -3,6 +3,9 @@ $(error BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
 
+# Makefile configuration
+.DEFAULT_GOAL := help
+
 # Main app configuration
 
 APPNAME = "Skycoin"
@@ -51,14 +54,16 @@ LDFLAGS += -O3 -Os
 LDLIBS += -lm -lgcc -lc
 
 # Main rules
-
 all: default
 
-load: all
+load: all ## Load app to the ledger
 	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
 
-delete:
+delete:  ## Remove app from the ledger
 	python -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
+
+help:  ## Help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 # Import generic rules from the SDK
 include $(BOLOS_SDK)/Makefile.rules
