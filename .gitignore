@@ -1,5 +1,6 @@
 # TextEditors files and folders
 .vscode/
+*.code-workspace
 .idea/
 *.iml
 
