@@ -3,7 +3,7 @@
 ## Overview
 Ledger Nano integration for Skycoin
 
-[![Build Status](https://travis-ci.com/skycoin/ledger-nano.svg?branch=master)](https://travis-ci.com/skycoin/ledger-nano)
+[![Build Status](https://travis-ci.com/skycoin/ledger-nano.svg)](https://travis-ci.com/skycoin/ledger-nano)
 
 This repository provides a BOLOS app for Skycoin integration with Ledger Nano S 
 

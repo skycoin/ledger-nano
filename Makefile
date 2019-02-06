@@ -3,19 +3,26 @@ $(error BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
 
-# Makefile configuration
-.DEFAULT_GOAL := help
-
 UNAME_S ?= $(shell uname -s)
 
+############################
+# Default compilation goal #
+############################
 
-# Main app configuration
+.DEFAULT_GOAL := help
+
+
+##########################
+# Main app configuration #
+##########################
 
 APPNAME = "Skycoin"
 APPVERSION = 1.0.0
 APP_LOAD_PARAMS = --appFlags 0x00 $(COMMON_LOAD_PARAMS)
 
-# Build configuration
+##########################
+# Build configuration    #
+##########################
 
 APP_SOURCE_PATH += src
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
@@ -30,7 +37,9 @@ DEFINES += HAVE_IO_USB HAVE_L4_USBLIB IO_USB_MAX_ENDPOINTS=7 IO_HID_EP_LENGTH=64
 
 DEFINES += CX_COMPLIANCE_141
 
-# Compiler, assembler, and linker
+######################################
+# Compiler, assembler, and linker    #
+######################################
 
 ifneq ($(BOLOS_ENV),)
 $(info BOLOS_ENV=$(BOLOS_ENV))
@@ -56,7 +65,10 @@ LD := $(GCCPATH)arm-none-eabi-gcc
 LDFLAGS += -O3 -Os
 LDLIBS += -lm -lgcc -lc
 
-# Main rules
+###################
+# Main rules      #
+###################
+
 all: default
 
 install-linters-Darwin:
