@@ -6,6 +6,9 @@ include $(BOLOS_SDK)/Makefile.defines
 # Makefile configuration
 .DEFAULT_GOAL := help
 
+UNAME_S ?= $(shell uname -s)
+
+
 # Main app configuration
 
 APPNAME = "Skycoin"
@@ -56,13 +59,24 @@ LDLIBS += -lm -lgcc -lc
 # Main rules
 all: default
 
-load: all ## Load app to the ledger
+install-linters-Darwin:
+	brew install yamllint
+
+install-linters-Linux:
+	pip install --user yamllint
+
+install-linters: install-linters-$(UNAME_S) ## install-linters: Install code quality checking tools
+
+lint: ## lint: Check code quality
+	yamllint -d relaxed .travis.yml
+
+load: all ## load: Load app to the ledger
 	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
 
-delete:  ## Remove app from the ledger
+delete:  ## delete: Remove app from the ledger
 	python -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
 
-help:  ## Help
+help:  ## help: Help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 # Import generic rules from the SDK
