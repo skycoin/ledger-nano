@@ -3,159 +3,27 @@
 
 #include "os_io_seproxyhal.h"
 
-unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
+#include "ui.h"
 
-static const bagl_element_t *io_seproxyhal_touch_exit(const bagl_element_t *e);
+/** start of the buffer, reject any transmission that doesn't start with this, as it's invalid. */
+#define CLA 0x80
 
-ux_state_t ux;
+/** #### instructions start #### **/
 
-// ********************************************************************************
-// Ledger Blue specific UI
-// ********************************************************************************
+/** instruction to reset . */
+#define INS_RESET 0x00
 
-static const bagl_element_t bagl_ui_sample_blue[] = {
-    // {
-    //     {type, userid, x, y, width, height, stroke, radius, fill, fgcolor,
-    //      bgcolor, font_id, icon_id},
-    //     text,
-    //     touch_area_brim,
-    //     overfgcolor,
-    //     overbgcolor,
-    //     tap,
-    //     out,
-    //     over,
-    // },
-    {
-        {BAGL_RECTANGLE, 0x00, 0, 60, 320, 420, 0, 0, BAGL_FILL, 0xf9f9f9,
-         0xf9f9f9, 0, 0},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_RECTANGLE, 0x00, 0, 0, 320, 60, 0, 0, BAGL_FILL, 0x1d2028,
-         0x1d2028, 0, 0},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_LABEL, 0x00, 20, 0, 320, 60, 0, 0, BAGL_FILL, 0xFFFFFF, 0x1d2028,
-         BAGL_FONT_OPEN_SANS_LIGHT_14px | BAGL_FONT_ALIGNMENT_MIDDLE, 0},
-        "Hello World",
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_BUTTON | BAGL_FLAG_TOUCHABLE, 0x00, 165, 225, 120, 40, 0, 6,
-         BAGL_FILL, 0x41ccb4, 0xF9F9F9, BAGL_FONT_OPEN_SANS_LIGHT_14px |
-         BAGL_FONT_ALIGNMENT_CENTER | BAGL_FONT_ALIGNMENT_MIDDLE, 0},
-        "EXIT",
-        0,
-        0x37ae99,
-        0xF9F9F9,
-        io_seproxyhal_touch_exit,
-        NULL,
-        NULL,
-    },
-};
+/** instruction to sign transaction and send back the signature. */
+#define INS_SIGN 0x02
 
-static unsigned int
-bagl_ui_sample_blue_button(unsigned int button_mask,
-                           unsigned int button_mask_counter) {
-    return 0;
-}
+/** instruction to send back the public key. */
+#define INS_GET_PUBLIC_KEY 0x04
 
-// ********************************************************************************
-// Ledger Nano S specific UI
-// ********************************************************************************
+/** instruction to send back the public key, and a signature of the private key signing the public key. */
+#define INS_GET_SIGNED_PUBLIC_KEY 0x08
 
-static const bagl_element_t bagl_ui_sample_nanos[] = {
-    // {
-    //     {type, userid, x, y, width, height, stroke, radius, fill, fgcolor,
-    //      bgcolor, font_id, icon_id},
-    //     text,
-    //     touch_area_brim,
-    //     overfgcolor,
-    //     overbgcolor,
-    //     tap,
-    //     out,
-    //     over,
-    // },
-    {
-        {BAGL_RECTANGLE, 0x00, 0, 0, 128, 32, 0, 0, BAGL_FILL, 0x000000,
-         0xFFFFFF, 0, 0},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_LABELINE, 0x01, 0, 12, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
-         BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
-        "Hello World",
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_ICON, 0x00, 3, 12, 7, 7, 0, 0, 0, 0xFFFFFF, 0x000000, 0,
-         BAGL_GLYPH_ICON_CROSS},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_ICON, 0x00, 117, 13, 8, 6, 0, 0, 0, 0xFFFFFF, 0x000000, 0,
-         BAGL_GLYPH_ICON_CHECK},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-};
+/** #### instructions end #### */
 
-static unsigned int
-bagl_ui_sample_nanos_button(unsigned int button_mask,
-                            unsigned int button_mask_counter) {
-    switch (button_mask) {
-    case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // EXIT
-        io_seproxyhal_touch_exit(NULL);
-        break;
-    }
-    return 0;
-}
-
-static const bagl_element_t *io_seproxyhal_touch_exit(const bagl_element_t *e) {
-    // Go back to the dashboard
-    os_sched_exit(0);
-    return NULL;
-}
 
 unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     switch (channel & ~(IO_FLAGS)) {
@@ -183,16 +51,8 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     return 0;
 }
 
-static void ui_idle(void) {
-    if (os_seph_features() &
-        SEPROXYHAL_TAG_SESSION_START_EVENT_FEATURE_SCREEN_BIG) {
-        UX_DISPLAY(bagl_ui_sample_blue, NULL);
-    } else {
-        UX_DISPLAY(bagl_ui_sample_nanos, NULL);
-    }
-}
 
-static void sample_main(void) {
+static void sky_main(void) {
     volatile unsigned int rx = 0;
     volatile unsigned int tx = 0;
     volatile unsigned int flags = 0;
@@ -209,8 +69,8 @@ static void sample_main(void) {
         BEGIN_TRY {
             TRY {
                 rx = tx;
-                tx = 0; // ensure no race in catch_other if io_exchange throws
-                        // an error
+                tx = 0; 
+                // ensure no race in catch_other if io_exchange throws an error
                 rx = io_exchange(CHANNEL_APDU | flags, rx);
                 flags = 0;
 
@@ -220,17 +80,57 @@ static void sample_main(void) {
                     THROW(0x6982);
                 }
 
-                if (G_io_apdu_buffer[0] != 0x80) {
+                if (G_io_apdu_buffer[0] != CLA) {
                     THROW(0x6E00);
                 }
 
-                // unauthenticated instruction
+
+                // check the second byte (0x01) for the instruction.
                 switch (G_io_apdu_buffer[1]) {
-                case 0x00: // reset
+                case INS_RESET: // reset
                     flags |= IO_RESET_AFTER_REPLIED;
                     THROW(0x9000);
                     break;
 
+                // getting the public key
+                case INS_GET_PUBLIC_KEY: {
+                    cx_ecfp_public_key_t publicKey;
+                    cx_ecfp_private_key_t privateKey;
+
+                    if (rx < APDU_HEADER_LENGTH + BIP44_BYTE_LENGTH) {
+                        hashTainted = 1;
+                        THROW(0x6D09);
+                    }
+
+                    /** BIP44 path, used to derive the private key from the mnemonic by calling os_perso_derive_node_bip32. */
+                    unsigned char * bip44_in = G_io_apdu_buffer + APDU_HEADER_LENGTH;
+
+                    unsigned int bip44_path[BIP44_PATH_LEN];
+                    uint32_t i;
+                    for (i = 0; i < BIP44_PATH_LEN; i++) {
+                        bip44_path[i] = (bip44_in[0] << 24) | (bip44_in[1] << 16) | (bip44_in[2] << 8) | (bip44_in[3]);
+                        bip44_in += 4;
+                    }
+                    unsigned char privateKeyData[32];
+                    os_perso_derive_node_bip32(CX_CURVE_256R1, bip44_path, BIP44_PATH_LEN, privateKeyData, NULL);
+                    cx_ecdsa_init_private_key(CX_CURVE_256R1, privateKeyData, 32, &privateKey);
+
+                    // generate the public key.
+                    cx_ecdsa_init_public_key(CX_CURVE_256R1, NULL, 0, &publicKey);
+                    cx_ecfp_generate_pair(CX_CURVE_256R1, &publicKey, &privateKey, 1);
+
+                    // push the public key onto the response buffer.
+                    os_memmove(G_io_apdu_buffer, publicKey.W, 65);
+                    tx = 65;
+
+                    // display_public_key(publicKey.W);
+                    // refresh_public_key_display();
+
+                    // return 0x9000 OK.
+                    THROW(0x9000);
+                }
+                    break;
+                
                 case 0x01: // case 1
                     THROW(0x9000);
                     break;
@@ -318,6 +218,8 @@ __attribute__((section(".boot"))) int main(void) {
     // exit critical section
     __asm volatile("cpsie i");
 
+    hashTainted = 1;
+
     UX_INIT();
 
     // ensure exception will work as planned
@@ -327,21 +229,21 @@ __attribute__((section(".boot"))) int main(void) {
         TRY {
             io_seproxyhal_init();
 
-#ifdef LISTEN_BLE
-            if (os_seph_features() &
-                SEPROXYHAL_TAG_SESSION_START_EVENT_FEATURE_BLE) {
-                BLE_power(0, NULL);
-                // restart IOs
-                BLE_power(1, NULL);
-            }
-#endif
+// #ifdef LISTEN_BLE
+//             if (os_seph_features() &
+//                 SEPROXYHAL_TAG_SESSION_START_EVENT_FEATURE_BLE) {
+//                 BLE_power(0, NULL);
+//                 // restart IOs
+//                 BLE_power(1, NULL);
+//             }
+// #endif
 
             USB_power(0);
             USB_power(1);
 
             ui_idle();
 
-            sample_main();
+            sky_main();
         }
         CATCH_OTHER(e) {
         }
