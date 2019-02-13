@@ -34,6 +34,12 @@ extern char timer_desc[MAX_TIMER_TEXT_WIDTH];
 /** length of BIP44 path, in bytes */
 #define  BIP44_BYTE_LENGTH (BIP44_PATH_LEN * sizeof(unsigned int))
 
+/** length of BIP32 path */
+#define BIP32_PATH_LEN 4
+
+/** length of BIP32 path, in bytes */
+#define  BIP32_BYTE_LENGTH (BIP32_PATH_LEN * sizeof(unsigned int))
+
 /**
  * Nano S has 320 KB flash, 10 KB RAM, uses a ST31H320 chip.
  * This effectively limits the max size

@@ -3,26 +3,27 @@
 
 #include "os_io_seproxyhal.h"
 
+#include "sky.h"
 #include "ui.h"
 
-/** start of the buffer, reject any transmission that doesn't start with this, as it's invalid. */
-#define CLA 0x80
-
 /** #### instructions start #### **/
+    /** start of the buffer, reject any transmission that doesn't start with this, as it's invalid. */
+    #define CLA 0x80
 
-/** instruction to reset . */
-#define INS_RESET 0x00
+    /** instruction to reset . */
+    #define INS_RESET 0x00
 
-/** instruction to sign transaction and send back the signature. */
-#define INS_SIGN 0x02
+    /** instruction to sign transaction and send back the signature. */
+    #define INS_SIGN 0x02
 
-/** instruction to send back the public key. */
-#define INS_GET_PUBLIC_KEY 0x04
+    /** instruction to send back the public key. */
+    #define INS_GET_PUBLIC_KEY 0x04
 
-/** instruction to send back the public key, and a signature of the private key signing the public key. */
-#define INS_GET_SIGNED_PUBLIC_KEY 0x08
-
+    /** instruction to send back the public key, and a signature of the private key signing the public key. */
+    #define INS_GET_SIGNED_PUBLIC_KEY 0x08
 /** #### instructions end #### */
+
+static void refresh_public_key_display(void);
 
 
 unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
@@ -97,22 +98,22 @@ static void sky_main(void) {
                     cx_ecfp_public_key_t publicKey;
                     cx_ecfp_private_key_t privateKey;
 
-                    if (rx < APDU_HEADER_LENGTH + BIP44_BYTE_LENGTH) {
+                    if (rx < APDU_HEADER_LENGTH + BIP32_BYTE_LENGTH) {
                         hashTainted = 1;
                         THROW(0x6D09);
                     }
 
                     /** BIP44 path, used to derive the private key from the mnemonic by calling os_perso_derive_node_bip32. */
-                    unsigned char * bip44_in = G_io_apdu_buffer + APDU_HEADER_LENGTH;
+                    unsigned char * bip32_in = G_io_apdu_buffer + APDU_HEADER_LENGTH;
 
-                    unsigned int bip44_path[BIP44_PATH_LEN];
+                    unsigned int bip32_path[BIP44_PATH_LEN];
                     uint32_t i;
-                    for (i = 0; i < BIP44_PATH_LEN; i++) {
-                        bip44_path[i] = (bip44_in[0] << 24) | (bip44_in[1] << 16) | (bip44_in[2] << 8) | (bip44_in[3]);
-                        bip44_in += 4;
+                    for (i = 0; i < BIP32_PATH_LEN; i++) {
+                        bip32_path[i] = (bip32_in[0] << 24) | (bip32_in[1] << 16) | (bip32_in[2] << 8) | (bip32_in[3]);
+                        bip32_in += 4;
                     }
                     unsigned char privateKeyData[32];
-                    os_perso_derive_node_bip32(CX_CURVE_256R1, bip44_path, BIP44_PATH_LEN, privateKeyData, NULL);
+                    os_perso_derive_node_bip32(CX_CURVE_256R1, bip32_path, BIP32_PATH_LEN, privateKeyData, NULL);
                     cx_ecdsa_init_private_key(CX_CURVE_256R1, privateKeyData, 32, &privateKey);
 
                     // generate the public key.
@@ -123,8 +124,8 @@ static void sky_main(void) {
                     os_memmove(G_io_apdu_buffer, publicKey.W, 65);
                     tx = 65;
 
-                    // display_public_key(publicKey.W);
-                    // refresh_public_key_display();
+                    display_public_key(publicKey.W);
+                    refresh_public_key_display();
 
                     // return 0x9000 OK.
                     THROW(0x9000);
@@ -175,6 +176,13 @@ return_to_dashboard:
 
 void io_seproxyhal_display(const bagl_element_t *element) {
     io_seproxyhal_display_default((bagl_element_t *)element);
+}
+
+/** refreshes the display if the public key was changed ans we are on the page displaying the public key */
+static void refresh_public_key_display(void) {
+	if ((uiState == UI_PUBLIC_KEY_1)|| (uiState == UI_PUBLIC_KEY_2)) {
+		publicKeyNeedsRefresh = 1;
+	}
 }
 
 unsigned char io_event(unsigned char channel) {

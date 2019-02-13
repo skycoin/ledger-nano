@@ -10,6 +10,21 @@ unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
 static const bagl_element_t *io_seproxyhal_touch_exit(const bagl_element_t *e);
 
+/** all text descriptions. */
+char tx_desc[MAX_TX_TEXT_SCREENS][MAX_TX_TEXT_LINES][MAX_TX_TEXT_WIDTH];
+
+/** currently displayed text description. */
+char curr_tx_desc[MAX_TX_TEXT_LINES][MAX_TX_TEXT_WIDTH];
+
+/** currently displayed public key */
+char current_public_key[MAX_TX_TEXT_LINES][MAX_TX_TEXT_WIDTH];
+
+/** UI state enum */
+enum UI_STATE uiState;
+
+/** notification to refresh the view, if we are displaying the public key */
+unsigned char publicKeyNeedsRefresh;
+
 // ********************************************************************************
 // Ledger Nano S specific UI
 // ********************************************************************************
