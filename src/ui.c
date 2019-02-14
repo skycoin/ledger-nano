@@ -1,5 +1,13 @@
 #include "ui.h"
 
+#include "os_io_seproxyhal.h"
+
+/** default font */
+#define DEFAULT_FONT BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER
+
+/** text description font. */
+#define TX_DESC_FONT BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER
+
 /** UI state flag */
 ux_state_t ux;
 
@@ -26,66 +34,48 @@ enum UI_STATE uiState;
 unsigned char publicKeyNeedsRefresh;
 
 // ********************************************************************************
-// Ledger Nano S specific UI
+// Structures with predescribed UI elements
 // ********************************************************************************
 
-static const bagl_element_t bagl_ui_sample_nanos[] = {
-    // {
-    //     {type, userid, x, y, width, height, stroke, radius, fill, fgcolor,
-    //      bgcolor, font_id, icon_id},
-    //     text,
-    //     touch_area_brim,
-    //     overfgcolor,
-    //     overbgcolor,
-    //     tap,
-    //     out,
-    //     over,
-    // },
-    {
-        {BAGL_RECTANGLE, 0x00, 0, 0, 128, 32, 0, 0, BAGL_FILL, 0x000000,
-         0xFFFFFF, 0, 0},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_LABELINE, 0x01, 0, 12, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
-         BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
-        "Hello World",
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_ICON, 0x00, 3, 12, 7, 7, 0, 0, 0, 0xFFFFFF, 0x000000, 0,
-         BAGL_GLYPH_ICON_CROSS},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-    {
-        {BAGL_ICON, 0x00, 117, 13, 8, 6, 0, 0, 0, 0xFFFFFF, 0x000000, 0,
-         BAGL_GLYPH_ICON_CHECK},
-        NULL,
-        0,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-    },
-};
+const ux_menu_entry_t menu_main[];
+const ux_menu_entry_t menu_settings[];
+
+const ux_menu_entry_t menu_settings[] = {
+    {menu_main, NULL, 1, NULL, "No settings yet. Back", NULL, 61, 40},
+    UX_MENU_END};
+
+const ux_menu_entry_t menu_about[] = {
+    {NULL, NULL, 0, NULL, "Version", APPVERSION, 0, 0},
+    {menu_main, NULL, 1, NULL, "Back", NULL, 61, 40},
+    UX_MENU_END};
+
+const ux_menu_entry_t menu_main[] = {
+    //{NULL, NULL, 0, &NAME3(C_nanos_badge_, COINID, ), "Use wallet to", "view
+    // accounts", 33, 12},
+    {NULL, NULL, 0, NULL, "Use wallet to", "view accounts", 0, 0},
+    {menu_settings, NULL, 0, NULL, "Settings", NULL, 0, 0},
+    {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
+    {NULL, os_sched_exit, 0, NULL, "Quit app", NULL, 50, 29},
+    UX_MENU_END};
+
+
+/**
+ * buttons for the idle screen
+ *
+ * exit on Left button, or on Both buttons. Do nothing on Right button only.
+ */
+static unsigned int bagl_ui_idle_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
+	switch (button_mask) {
+	case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
+		// ui_public_key_1();
+		break;
+	case BUTTON_EVT_RELEASED | BUTTON_LEFT:
+		io_seproxyhal_touch_exit(NULL);
+		break;
+	}
+
+	return 0;
+}
 
 static unsigned int
 bagl_ui_sample_nanos_button(unsigned int button_mask,
@@ -105,5 +95,5 @@ static const bagl_element_t *io_seproxyhal_touch_exit(const bagl_element_t *e) {
 }
 
 void ui_idle(void) {
-    UX_DISPLAY(bagl_ui_sample_nanos, NULL);
+    UX_MENU_DISPLAY(0, menu_main, NULL);
 }
