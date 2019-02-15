@@ -24,6 +24,12 @@ APP_LOAD_PARAMS = --appFlags 0x00 $(COMMON_LOAD_PARAMS)
 # Build configuration    #
 ##########################
 
+# import rules to compile glyphs(/pone)
+# $(BOLOS_SDK)
+include $(BOLOS_SDK)/Makefile.glyphs
+$(exec_prefix)
+
+
 APP_SOURCE_PATH += src
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 
@@ -69,7 +75,7 @@ LDLIBS += -lm -lgcc -lc
 # Main rules      #
 ###################
 
-all: default
+all: default ## all: Compile everything
 
 install-linters-Darwin:
 	brew install yamllint

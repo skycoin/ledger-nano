@@ -3,9 +3,12 @@
 
 #include "os.h"
 #include "cx.h"
+
 #include<stdbool.h>
+
 #include "os_io_seproxyhal.h"
 #include "bagl.h"
+#include "glyphs.h"
 
 /** the timer */
 extern int exit_timer;
