@@ -10,3 +10,6 @@ cmake-build-debug/
 debug/
 dep/
 obj/
+
+# Automatically generated files
+src/glyphs.*
