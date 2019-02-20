@@ -1,35 +1,38 @@
 language: c
 
+os:
+    - linux
+
 cache:
   directories:
   - $HOME/bolos-devenv
 
 before_install:
   # Download and extract compilers
-  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-    wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-    wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+  - if [[ "$TRAVIS_OS_NAME" == 'linux' ]]; then
+    wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2 &&
+    wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz;
     fi
 
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-    wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-mac.tar.bz2
-    wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-apple-darwin.tar.xz
+  - if [[ "$TRAVIS_OS_NAME" == 'osx' ]]; then
+    wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-mac.tar.bz2 &&
+    wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-apple-darwin.tar.xz;
     fi
 
   - mkdir bolos-devenv
   - export BOLOS_ENV="$(pwd)/bolos-devenv";
 
-  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-    tar xC ./bolos-devenv -f ./gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-    tar xf "./clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz"
-    mv ./clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04 ./bolos-devenv/clang-arm-fropi
+  - if [[ "$TRAVIS_OS_NAME" == 'linux' ]]; then
+    tar xC ./bolos-devenv -f ./gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2 &&
+    tar xf "./clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz" &&
+    mv ./clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04 ./bolos-devenv/clang-arm-fropi;
     fi
 
 
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-    tar xC ./bolos-devenv -f ./gcc-arm-none-eabi-5_3-2016q1-20160330-mac.tar.bz2
-    tar xf "./clang+llvm-4.0.0-x86_64-apple-darwin.tar.xz"
-    mv ./clang+llvm-4.0.0-x86_64-apple-darwin ./bolos-devenv/clang-arm-fropi
+  - if [[ "$TRAVIS_OS_NAME" == 'osx' ]]; then
+    tar xC ./bolos-devenv -f ./gcc-arm-none-eabi-5_3-2016q1-20160330-mac.tar.bz2 &&
+    tar xf "./clang+llvm-4.0.0-x86_64-apple-darwin.tar.xz" &&
+    mv ./clang+llvm-4.0.0-x86_64-apple-darwin ./bolos-devenv/clang-arm-fropi;
     fi
 
   # Download and extract SDK
@@ -38,7 +41,10 @@ before_install:
   - export BOLOS_SDK="$(pwd)/bolos-devenv/nanos-secure-sdk"
 
 install:
-  - sudo apt-get install gcc-multilib g++-multilib
+  - if [[ "$TRAVIS_OS_NAME" == 'linux' ]]; then
+    sudo apt-get install gcc-multilib g++-multilib;
+    fi
+
   - make install-linters
 
 script:
