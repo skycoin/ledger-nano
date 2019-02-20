@@ -21,6 +21,9 @@
 
     /** instruction to send back the public key, and a signature of the private key signing the public key. */
     #define INS_GET_SIGNED_PUBLIC_KEY 0x08
+
+    /** instruction to send back the public key, and a signature of the private key signing the public key. */
+    #define INS_RET_SUCCESS 0x9000
 /** #### instructions end #### */
 
 static void refresh_public_key_display(void);
@@ -90,7 +93,7 @@ static void sky_main(void) {
                 switch (G_io_apdu_buffer[1]) {
                 case INS_RESET: // reset
                     flags |= IO_RESET_AFTER_REPLIED;
-                    THROW(0x9000);
+                    THROW(INS_RET_SUCCESS);
                     break;
 
                 // getting the public key
@@ -113,32 +116,36 @@ static void sky_main(void) {
                         bip32_in += 4;
                     }
                     unsigned char privateKeyData[32];
-                    os_perso_derive_node_bip32(CX_CURVE_256R1, bip32_path, BIP32_PATH_LEN, privateKeyData, NULL);
-                    cx_ecdsa_init_private_key(CX_CURVE_256R1, privateKeyData, 32, &privateKey);
+                    os_perso_derive_node_bip32(CX_CURVE_256K1, bip32_path, BIP32_PATH_LEN, privateKeyData, NULL);
+                    cx_ecdsa_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &privateKey);
 
                     // generate the public key.
-                    cx_ecdsa_init_public_key(CX_CURVE_256R1, NULL, 0, &publicKey);
-                    cx_ecfp_generate_pair(CX_CURVE_256R1, &publicKey, &privateKey, 1);
+                    cx_ecdsa_init_public_key(CX_CURVE_256K1, NULL, 0, &publicKey);
+                    cx_ecfp_generate_pair(CX_CURVE_256K1, &publicKey, &privateKey, 1);
 
                     // push the public key onto the response buffer.
                     os_memmove(G_io_apdu_buffer, publicKey.W, 65);
                     tx = 65;
 
-                    display_public_key(publicKey.W);
+                    display_address(publicKey.W);
                     refresh_public_key_display();
 
+                    PRINTF("Address :\n %.*H \n", 25, address);
+
+                    // ui_public_key_1();
+
                     // return 0x9000 OK.
-                    THROW(0x9000);
+                    THROW(INS_RET_SUCCESS);
                 }
                     break;
                 
                 case 0x01: // case 1
-                    THROW(0x9000);
+                    THROW(INS_RET_SUCCESS);
                     break;
 
                 case 0x02: // echo
                     tx = rx;
-                    THROW(0x9000);
+                    THROW(INS_RET_SUCCESS);
                     break;
 
                 case 0xFF: // return to dashboard
@@ -159,6 +166,7 @@ static void sky_main(void) {
                     sw = 0x6800 | (e & 0x7FF);
                     break;
                 }
+
                 // Unexpected exception => report
                 G_io_apdu_buffer[tx] = sw >> 8;
                 G_io_apdu_buffer[tx + 1] = sw;
@@ -226,7 +234,8 @@ __attribute__((section(".boot"))) int main(void) {
     // exit critical section
     __asm volatile("cpsie i");
 
-    hashTainted = 1;
+	hashTainted = 1;
+	uiState = UI_IDLE;
 
     UX_INIT();
 
@@ -235,7 +244,7 @@ __attribute__((section(".boot"))) int main(void) {
 
     BEGIN_TRY {
         TRY {
-            io_seproxyhal_init();
+            io_seproxyhal_init();   
 
 // #ifdef LISTEN_BLE
 //             if (os_seph_features() &

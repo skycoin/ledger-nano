@@ -65,6 +65,9 @@
 static const char NO_PUBLIC_KEY_0[] = "No Public Key";
 static const char NO_PUBLIC_KEY_1[] = "Requested Yet";
 
+// concatenate the ADDRESS_VERSION and the address.
+unsigned char address[ADDRESS_LEN];
+
 /** array of capital letter hex values */
 static const char HEX_CAP[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', };
 
@@ -168,17 +171,13 @@ static void to_address(char * dest, unsigned int dest_len, const unsigned char *
 	 *	20 bytes RIPMD(...) + Version byte + 4 checksum bytes
 	 */
 	static cx_sha256_t address_hash;
-	static cs_ripemd160_t adress_rip;
+	static cx_ripemd160_t address_rip;
 
 	unsigned char address_hash_result_0[SHA256_HASH_LEN];
 	unsigned char address_hash_result_1[SHA256_HASH_LEN];
 
-	// concatenate the ADDRESS_VERSION and the address.
-	unsigned char address[ADDRESS_LEN];
-	address[0] = ADDRESS_VERSION;
-
 	// do a sha256 hash of the public key twice.
-	cx_sha256_init(&address_hash);
+	cx_sha256_init(&address_hash);	
 	cx_hash(&address_hash.header, CX_LAST, public_key_compressed, 33, address_hash_result_0);
 	cx_sha256_init(&address_hash);
 	cx_hash(&address_hash.header, CX_LAST, address_hash_result_0, SHA256_HASH_LEN, address_hash_result_1);
@@ -189,16 +188,22 @@ static void to_address(char * dest, unsigned int dest_len, const unsigned char *
 	cx_hash(&address_rip.header, CX_LAST, address_hash_result_1, SHA256_HASH_LEN, address_ripmd_hash);
 
 	// Get address
-	os_memmove(address + 1, address_ripmd_hash, SCRIPT_HASH_LEN);
+	os_memmove(address, address_ripmd_hash, SCRIPT_HASH_LEN);
+	address[20] = ADDRESS_VERSION;
+
+	unsigned char checksum[SHA256_HASH_LEN];
+	cx_sha256_init(&address_hash);
+	cx_hash(&address_hash.header, CX_LAST, address, 21, checksum);
+	os_memmove(address + 21, checksum, 4);
 
 	// encode the version + address + checksum in base58
-//	encode_base_58(address, ADDRESS_LEN, dest, dest_len);
+	//	encode_base_58(address, ADDRESS_LEN, dest, dest_len);
 }
 
 void display_address(const unsigned char * public_key) {
-	os_memmove(current_public_key[0], TXT_BLANK, sizeof(TXT_BLANK));
-	os_memmove(current_public_key[1], TXT_BLANK, sizeof(TXT_BLANK));
-	os_memmove(current_public_key[2], TXT_BLANK, sizeof(TXT_BLANK));
+	// os_memmove(current_public_key[0], TXT_BLANK, sizeof(TXT_BLANK));
+	// os_memmove(current_public_key[1], TXT_BLANK, sizeof(TXT_BLANK));
+	// os_memmove(current_public_key[2], TXT_BLANK, sizeof(TXT_BLANK));
 
 	unsigned char public_key_compressed[33];
 	public_key_compressed[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
@@ -207,10 +212,8 @@ void display_address(const unsigned char * public_key) {
 	char address_base58[ADDRESS_BASE58_LEN];
 	unsigned int address_base58_len_0 = ADDRESS_BASE58_LEN/3;
 	unsigned int address_base58_len_1 = ADDRESS_BASE58_LEN/3;
-	unsigned int address_base58_len_2 = ADDRESS_BASE58_LEN - 2*address_base58;
-	char * address_base58_0 = address_base58;
-	char * address_base58_1 = address_base58 + address_base58_len_0;
-	char * address_base58_2 = address_base58 + address_base58_len_0 + address_base58_len_1;
+	unsigned int address_base58_len_2 = ADDRESS_BASE58_LEN - 2*address_base58_len_0;
+
 	to_address(address_base58, ADDRESS_BASE58_LEN, public_key_compressed);
 
 //	os_memmove(current_public_key[0], address_base58_0, address_base58_len_0);
