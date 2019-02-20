@@ -65,9 +65,6 @@
 static const char NO_PUBLIC_KEY_0[] = "No Public Key";
 static const char NO_PUBLIC_KEY_1[] = "Requested Yet";
 
-// concatenate the ADDRESS_VERSION and the address.
-unsigned char address[ADDRESS_LEN];
-
 /** array of capital letter hex values */
 static const char HEX_CAP[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', };
 

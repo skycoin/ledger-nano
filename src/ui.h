@@ -113,6 +113,9 @@ extern char curr_tx_desc[MAX_TX_TEXT_LINES][MAX_TX_TEXT_WIDTH];
 /** currently displayed public key */
 extern char current_public_key[MAX_TX_TEXT_LINES][MAX_TX_TEXT_WIDTH];
 
+// concatenate the ADDRESS_VERSION and the address.
+extern char address[25];
+
 /** process a partial transaction */
 const bagl_element_t * io_seproxyhal_touch_approve(const bagl_element_t *e);
 
