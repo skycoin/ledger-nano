@@ -47,13 +47,13 @@
 #define SCRIPT_HASH_CHECKSUM_LEN 4
 
 /** length of a tx.output Address, after Base58 encoding. */
-#define ADDRESS_BASE58_LEN 34
+#define ADDRESS_BASE58_LEN 35
 
 /** length of a tx.output Address before encoding, which is the length of <address_version>+<script_hash>+<checksum> */
 #define ADDRESS_LEN (1 + SCRIPT_HASH_LEN + SCRIPT_HASH_CHECKSUM_LEN)
 
 /** the current version of the address field */
-#define ADDRESS_VERSION 23
+#define ADDRESS_VERSION 0
 
 /** the length of a SHA256 hash */
 #define SHA256_HASH_LEN 32
@@ -144,7 +144,7 @@ static unsigned int encode_base_x(const char * alphabet, const unsigned int alph
 	return true_out_length;
 }
 
-void public_key_hash160(unsigned char * in, unsigned short inlen, unsigned char *out) {
+void public_key_hash_hash160(unsigned char * in, unsigned short inlen, unsigned char *out) {
 	union {
 		cx_sha256_t shasha;
 		cx_ripemd160_t riprip;
@@ -158,66 +158,62 @@ void public_key_hash160(unsigned char * in, unsigned short inlen, unsigned char 
 }
 
 
-/** converts a NEO scripthas to a NEO address by adding a checksum and encoding in base58 */
-static void to_address(char * dest, unsigned int dest_len, const unsigned char * script_hash) {
+// Converts compressed public key to address
+static void to_address(char * dest, unsigned int dest_len, const unsigned char * public_key_compressed) {
+	/*
+	 * Address format 1+20=21 bytes:
+	 *  Version byte + 20 byte RIPMD160(SHA256(SHA256(compressed public key)))
+	 *
+	 * Base 58 address format 20+1+4 bytes:
+	 *	20 bytes RIPMD(...) + Version byte + 4 checksum bytes
+	 */
 	static cx_sha256_t address_hash;
+	static cs_ripemd160_t adress_rip;
+
 	unsigned char address_hash_result_0[SHA256_HASH_LEN];
 	unsigned char address_hash_result_1[SHA256_HASH_LEN];
 
 	// concatenate the ADDRESS_VERSION and the address.
 	unsigned char address[ADDRESS_LEN];
 	address[0] = ADDRESS_VERSION;
-	os_memmove(address + 1, script_hash, SCRIPT_HASH_LEN);
 
-	// do a sha256 hash of the address twice.
+	// do a sha256 hash of the public key twice.
 	cx_sha256_init(&address_hash);
-	cx_hash(&address_hash.header, CX_LAST, address, SCRIPT_HASH_LEN + 1, address_hash_result_0);
+	cx_hash(&address_hash.header, CX_LAST, public_key_compressed, 33, address_hash_result_0);
 	cx_sha256_init(&address_hash);
 	cx_hash(&address_hash.header, CX_LAST, address_hash_result_0, SHA256_HASH_LEN, address_hash_result_1);
 
-	// add the first bytes of the hash as a checksum at the end of the address.
-	os_memmove(address + 1 + SCRIPT_HASH_LEN, address_hash_result_1, SCRIPT_HASH_CHECKSUM_LEN);
+	// do a RIPMD160 to sha256(sha256(public key))
+	unsigned char address_ripmd_hash[SCRIPT_HASH_LEN];
+	cx_ripemd160_init(&address_rip);
+	cx_hash(&address_rip.header, CX_LAST, address_hash_result_1, SHA256_HASH_LEN, address_ripmd_hash);
 
-	// encode the version + address + cehcksum in base58
-	encode_base_58(address, ADDRESS_LEN, dest, dest_len);
+	// Get address
+	os_memmove(address + 1, address_ripmd_hash, SCRIPT_HASH_LEN);
+
+	// encode the version + address + checksum in base58
+//	encode_base_58(address, ADDRESS_LEN, dest, dest_len);
 }
 
-void display_public_key(const unsigned char * public_key) {
+void display_address(const unsigned char * public_key) {
 	os_memmove(current_public_key[0], TXT_BLANK, sizeof(TXT_BLANK));
 	os_memmove(current_public_key[1], TXT_BLANK, sizeof(TXT_BLANK));
 	os_memmove(current_public_key[2], TXT_BLANK, sizeof(TXT_BLANK));
 
-	// from https://github.com/CityOfZion/neon-js core.js
-	unsigned char public_key_encoded[33];
-	public_key_encoded[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
-	os_memmove(public_key_encoded + 1, public_key + 1, 32);
-
-	unsigned char verification_script[35];
-	verification_script[0] = 0x21;
-	os_memmove(verification_script + 1, public_key_encoded, sizeof(public_key_encoded));
-	verification_script[sizeof(verification_script) - 1] = 0xAC;
-
-	unsigned char script_hash[SCRIPT_HASH_LEN];
-	for (int i = 0; i < SCRIPT_HASH_LEN; i++) {
-		script_hash[i] = 0x00;
-	}
-
-	public_key_hash160(verification_script, sizeof(verification_script), script_hash);
-	unsigned char script_hash_rev[SCRIPT_HASH_LEN];
-	for (int i = 0; i < SCRIPT_HASH_LEN; i++) {
-		script_hash_rev[i] = script_hash[SCRIPT_HASH_LEN - (i + 1)];
-	}
+	unsigned char public_key_compressed[33];
+	public_key_compressed[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
+	os_memmove(public_key_compressed + 1, public_key, 32);
 
 	char address_base58[ADDRESS_BASE58_LEN];
-	unsigned int address_base58_len_0 = 11;
-	unsigned int address_base58_len_1 = 11;
-	unsigned int address_base58_len_2 = 12;
+	unsigned int address_base58_len_0 = ADDRESS_BASE58_LEN/3;
+	unsigned int address_base58_len_1 = ADDRESS_BASE58_LEN/3;
+	unsigned int address_base58_len_2 = ADDRESS_BASE58_LEN - 2*address_base58;
 	char * address_base58_0 = address_base58;
 	char * address_base58_1 = address_base58 + address_base58_len_0;
 	char * address_base58_2 = address_base58 + address_base58_len_0 + address_base58_len_1;
-	to_address(address_base58, ADDRESS_BASE58_LEN, script_hash);
+	to_address(address_base58, ADDRESS_BASE58_LEN, public_key_compressed);
 
-	os_memmove(current_public_key[0], address_base58_0, address_base58_len_0);
-	os_memmove(current_public_key[1], address_base58_1, address_base58_len_1);
-	os_memmove(current_public_key[2], address_base58_2, address_base58_len_2);
+//	os_memmove(current_public_key[0], address_base58_0, address_base58_len_0);
+//	os_memmove(current_public_key[1], address_base58_1, address_base58_len_1);
+//	os_memmove(current_public_key[2], address_base58_2, address_base58_len_2);
 }
