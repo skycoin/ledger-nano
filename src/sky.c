@@ -47,7 +47,7 @@
 #define SCRIPT_HASH_CHECKSUM_LEN 4
 
 /** length of a tx.output Address, after Base58 encoding. */
-#define ADDRESS_BASE58_LEN 34
+#define ADDRESS_BASE58_LEN 35
 
 /** length of a tx.output Address before encoding, which is the length of <address_version>+<script_hash>+<checksum> */
 #define ADDRESS_LEN (1 + SCRIPT_HASH_LEN + SCRIPT_HASH_CHECKSUM_LEN)
@@ -76,65 +76,47 @@ static const char BASE_58_ALPHABET[] = {'1', '2', '3', '4', '5', '6', '7', '8', 
 /** MAX_TX_TEXT_WIDTH in blanks, used for clearing a line of text */
 static const char TXT_BLANK[] = "                 ";
 
-/** encodes in_length bytes from in into the given base, using the given alphabet. writes the converted bytes to out, stopping when it converts out_length bytes. */
-unsigned int
-encode_base_x(const char *alphabet, const unsigned int alphabet_len, const void *in, const unsigned int in_length,
-              char *out,
-              const unsigned int out_length) {
-    char tmp[64];
-    char buffer[128];
-    unsigned char buffer_ix;
-    unsigned char startAt;
-    unsigned char zeroCount = 0;
-    if (in_length > sizeof(tmp)) {
-        hashTainted = 1;
-        THROW(0x6D11);
+int encode_base_58(const unsigned char *pbegin, int len, char *result) {
+    const unsigned char *pend = pbegin + len;
+    // Skip & count leading zeroes.
+    int zeroes = 0;
+    int length = 0;
+    while (pbegin != pend && *pbegin == 0) {
+        pbegin++;
+        zeroes++;
     }
-    os_memmove(tmp, in, in_length);
-    while ((zeroCount < in_length) && (tmp[zeroCount] == 0)) {
-        ++zeroCount;
+    unsigned char b58[35];
+    for (int i = 0; i < 35; i++) {
+        b58[i] = 0;
     }
-    buffer_ix = 2 * in_length;
-    if (buffer_ix > sizeof(buffer)) {
-        hashTainted = 1;
-        THROW(0x6D12);
-    }
-
-    startAt = zeroCount;
-    while (startAt < in_length) {
-        unsigned short remainder = 0;
-        unsigned char divLoop;
-        for (divLoop = startAt; divLoop < in_length; divLoop++) {
-            unsigned short digit256 = (unsigned short) (tmp[divLoop] & 0xff);
-            unsigned short tmpDiv = remainder * 256 + digit256;
-            tmp[divLoop] = (unsigned char) (tmpDiv / alphabet_len);
-            remainder = (tmpDiv % alphabet_len);
+    int size = len * 138 / 100 + 1;
+    // Process the bytes.
+    while (pbegin != pend) {
+        int carry = *pbegin;
+        int i = 0;
+        // Apply "b58 = b58 * 256 + ch".
+        for (int j = size - 1; (carry != 0 || i < length) && j != -1; j--, i++) {
+            carry += (b58[j] * 256);
+            b58[j] = carry % 58;
+            carry /= 58;
         }
-        if (tmp[startAt] == 0) {
-            ++startAt;
-        }
-        buffer[--buffer_ix] = *(alphabet + remainder);
-    }
-    while ((buffer_ix < (2 * in_length)) && (buffer[buffer_ix] == *(alphabet + 0))) {
-        ++buffer_ix;
-    }
-    while (zeroCount-- > 0) {
-        buffer[--buffer_ix] = *(alphabet + 0);
-    }
-    const unsigned int true_out_length = (2 * in_length) - buffer_ix;
-    if (true_out_length > out_length) {
-        THROW(0x6D14);
-    }
-    os_memmove(out, (buffer + buffer_ix), true_out_length);
-    return true_out_length;
-}
 
-unsigned int encode_base_58(const void *in, const unsigned int in_len, char *out, const unsigned int out_len) {
-    return encode_base_x(BASE_58_ALPHABET, sizeof(BASE_58_ALPHABET), in, in_len, out, out_len);
+        length = i;
+        pbegin++;
+    }
+    // Skip leading zeroes in base58 result.
+    int j = size - length;
+    while (j != size && b58[j] == 0)
+        j++;
+    // Translate the result into a string.
+    int i = 0;
+    while (i != size)
+        result[i++] = BASE_58_ALPHABET[b58[j++]];
+    result[i] = '\0';
 }
 
 // Converts compressed public key to address
-static void to_address(char *dest, unsigned int dest_len, const unsigned char *public_key_compressed) {
+static void to_address(const unsigned char *public_key_compressed, char *result) {
     /*
      * Address format 1+20=21 bytes:
      *  Version byte + 20 byte RIPMD160(SHA256(SHA256(compressed public key)))
@@ -169,7 +151,7 @@ static void to_address(char *dest, unsigned int dest_len, const unsigned char *p
     cx_hash(&address_hash.header, CX_LAST, address, 21, checksum);
     os_memmove(address + 21, checksum, 4);
 
-    encode_base_58(address, ADDRESS_LEN, dest, dest_len);
+    encode_base_58(address, ADDRESS_LEN, result);
 }
 
 void display_address(const unsigned char *public_key) {
@@ -181,12 +163,9 @@ void display_address(const unsigned char *public_key) {
     public_key_compressed[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
     os_memmove(public_key_compressed + 1, public_key, 32);
 
-    char address_base58[ADDRESS_BASE58_LEN];
-    unsigned int address_base58_len_0 = ADDRESS_BASE58_LEN / 3;
-    unsigned int address_base58_len_1 = ADDRESS_BASE58_LEN / 3;
-    unsigned int address_base58_len_2 = ADDRESS_BASE58_LEN - 2 * address_base58_len_0;
+    unsigned char address[ADDRESS_BASE58_LEN];
 
-    to_address(address_base58, ADDRESS_BASE58_LEN, public_key_compressed);
+    to_address(public_key_compressed, address);
 
 //	os_memmove(current_public_key[0], address_base58_0, address_base58_len_0);
 //	os_memmove(current_public_key[1], address_base58_1, address_base58_len_1);
