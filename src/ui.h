@@ -114,7 +114,7 @@ extern char curr_tx_desc[MAX_TX_TEXT_LINES][MAX_TX_TEXT_WIDTH];
 extern char current_public_key[MAX_TX_TEXT_LINES][MAX_TX_TEXT_WIDTH];
 
 // concatenate the ADDRESS_VERSION and the address.
-extern char address[25];
+extern char address[36];
 
 /** process a partial transaction */
 const bagl_element_t * io_seproxyhal_touch_approve(const bagl_element_t *e);
@@ -127,6 +127,10 @@ void ui_top_sign(void);
 
 /** return the length of the communication buffer */
 unsigned int get_apdu_buffer_length();
+
+void io_seproxyhal_display(const bagl_element_t *element);
+
+unsigned char io_event(unsigned char channel);
 
 
 #endif
