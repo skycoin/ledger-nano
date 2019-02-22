@@ -119,18 +119,10 @@ void swap_str_elems(void* str, int from, int to){
     ((char *) str)[from] = tmp;
 }
 
-int current_offset;
-int direction;
+int current_offset, direction;
 unsigned int simple_prepro(const bagl_element_t *element) {
     if(element->component.userid == 0x83) {
-        // screen_printf("current_offset: %d\n", current_offset);
-        // screen_printf("text: %s\n", element->text);
-
-        if(current_offset < 5) {
-            strcpy(element->text+(5-current_offset), address + current_offset);
-        } else {
-            strcpy(element->text, address + current_offset);
-        }
+        strcpy(element->text, address + current_offset);
         ((char *) element->text) [SCREEN_MAX_CHARS] = '\0';        
 
         current_offset += direction;
@@ -151,7 +143,7 @@ void go_to_address(unsigned int userid){
 
     current_offset = 0;
     direction = 1;
-    char tmp_blank[] = "                                       ";
+    char tmp_blank[] = "                                       \0";
     os_memmove(address_copy, tmp_blank, 40);
     
     UX_DISPLAY(bagl_ui_address, simple_prepro);
@@ -229,8 +221,7 @@ void ui_idle(void) {
     ux_loop_over_curr_element = 0;
 
     // set default value for address
-    os_memmove(address, "No address generated yet           \0", 36);
-
+    os_memmove(address, "  No address generated yet         \0", 36);
 
     UX_MENU_DISPLAY(0, menu_main, NULL);
 }

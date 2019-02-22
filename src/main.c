@@ -130,10 +130,6 @@ static void sky_main(void) {
                     display_address(publicKey.W);
                     refresh_public_key_display();
 
-                    PRINTF("Address :\n %.*H \n", 25, address);
-
-                    // ui_public_key_1();
-
                     // return 0x9000 OK.
                     THROW(INS_RET_SUCCESS);
                 }

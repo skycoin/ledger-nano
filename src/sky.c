@@ -110,15 +110,15 @@ static void to_address(const unsigned char *public_key_compressed, char *result)
 }
 
 void display_address(const unsigned char *public_key) {
-
     // convert public key from uncompressed to compressed
     unsigned char public_key_compressed[33];
+    
     // check parity and add appropriate prefix
     public_key_compressed[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
     os_memmove(public_key_compressed + 1, public_key, 32);
 
-    unsigned char address[ADDRESS_BASE58_LEN];
-    to_address(public_key_compressed, address);
+    unsigned char address_base58[ADDRESS_BASE58_LEN];
+    to_address(public_key_compressed, address_base58);
 
-    screen_printf("base58 address: %s\n", address);
+    os_memmove(address, address_base58, ADDRESS_BASE58_LEN);
 }
