@@ -101,22 +101,22 @@ static void sky_main(void) {
                     cx_ecfp_public_key_t publicKey;
                     cx_ecfp_private_key_t privateKey;
 
-                    if (rx < APDU_HEADER_LENGTH + BIP32_BYTE_LENGTH) {
+                    if (rx < APDU_HEADER_LENGTH + BIP44_BYTE_LENGTH) {
                         hashTainted = 1;
                         THROW(0x6D09);
                     }
 
                     /** BIP44 path, used to derive the private key from the mnemonic by calling os_perso_derive_node_bip32. */
-                    unsigned char * bip32_in = G_io_apdu_buffer + APDU_HEADER_LENGTH;
+                    unsigned char * bip44_in = G_io_apdu_buffer + APDU_HEADER_LENGTH;
 
-                    unsigned int bip32_path[BIP44_PATH_LEN];
+                    unsigned int bip44_path[BIP44_PATH_LEN];
                     uint32_t i;
-                    for (i = 0; i < BIP32_PATH_LEN; i++) {
-                        bip32_path[i] = (bip32_in[0] << 24) | (bip32_in[1] << 16) | (bip32_in[2] << 8) | (bip32_in[3]);
-                        bip32_in += 4;
+                    for (i = 0; i < BIP44_PATH_LEN; i++) {
+                        bip44_path[i] = (bip44_in[0] << 24) | (bip44_in[1] << 16) | (bip44_in[2] << 8) | (bip44_in[3]);
+                        bip44_in += 4;
                     }
                     unsigned char privateKeyData[32];
-                    os_perso_derive_node_bip32(CX_CURVE_256K1, bip32_path, BIP32_PATH_LEN, privateKeyData, NULL);
+                    os_perso_derive_node_bip32(CX_CURVE_256K1, bip44_path, BIP44_PATH_LEN, privateKeyData, NULL);
                     cx_ecdsa_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &privateKey);
 
                     // generate the public key.
