@@ -102,7 +102,7 @@ void to_address(const unsigned char *public_key_compressed, char *result) {
     encode_base_58(result, ADDRESS_LEN, result);
 }
 
-void display_address(const unsigned char *public_key, unsigned char *dst) {
+void generate_address(const unsigned char *public_key, unsigned char *dst) {
     // convert public key from uncompressed to compressed
     unsigned char public_key_compressed[33];
 

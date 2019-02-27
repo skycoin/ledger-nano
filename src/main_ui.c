@@ -1,4 +1,4 @@
-#include "ui.h"
+#include "main_ui.h"
 
 /** UI state flag */
 ux_state_t ux;

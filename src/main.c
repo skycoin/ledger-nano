@@ -4,7 +4,7 @@
 #include "os_io_seproxyhal.h"
 
 #include "sky.h"
-#include "ui.h"
+#include "main_ui.h"
 #include "ux.h"
 
 #include "apdu_handlers.h"

@@ -40,7 +40,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     os_memmove(G_io_apdu_buffer, publicKey.W, 65);
     *tx = 65;
 
-    display_address(publicKey.W, global.getPublicKeyContext.address);
+    generate_address(publicKey.W, global.getPublicKeyContext.address);
     screen_printf("Address: %s\n", global.getPublicKeyContext.address);
 
     THROW(INS_RET_SUCCESS);
