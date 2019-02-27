@@ -18,16 +18,16 @@
 /** the current version in the address field */
 #define ADDRESS_VERSION 0
 
-/** Label when a public key has not been set yet */
-static const char NO_PUBLIC_KEY_0[] = "No Public Key";
-static const char NO_PUBLIC_KEY_1[] = "Requested Yet";
+// /** Label when a public key has not been set yet */
+// static const char NO_PUBLIC_KEY_0[] = "No Public Key";
+// static const char NO_PUBLIC_KEY_1[] = "Requested Yet";
 
 
 /** array of base58 alphabet letters */
 static const char BASE_58_ALPHABET[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-/** blank string, used for clearing a line of text */
-static const char TXT_BLANK[] = "                 ";
+// /** blank string, used for clearing a line of text */
+// static const char TXT_BLANK[] = "                 ";
 
 int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     const unsigned char *pend = pbegin + len;
@@ -95,21 +95,21 @@ void to_address(const unsigned char *public_key_compressed, char *result) {
     cx_hash(&address_rip.header, CX_LAST, address_hash_result_1, SHA256_HASH_LEN, address_ripmd_hash);
 
     // add version to address
-    os_memmove(address, address_ripmd_hash, RIPMD_HASH_LEN);
-    address[20] = ADDRESS_VERSION;
+    os_memmove(result, address_ripmd_hash, RIPMD_HASH_LEN);
+    result[20] = ADDRESS_VERSION;
 
 
     // add checksum to address
     unsigned char checksum[SHA256_HASH_LEN];
     cx_sha256_init(&address_hash);
-    cx_hash(&address_hash.header, CX_LAST, address, 21, checksum);
-    os_memmove(address + 21, checksum, 4);
+    cx_hash(&address_hash.header, CX_LAST, result, 21, checksum);
+    os_memmove(result + 21, checksum, 4);
 
     //encode address to base58
-    encode_base_58(address, ADDRESS_LEN, result);
+    encode_base_58(result, ADDRESS_LEN, result);
 }
 
-void display_address(const unsigned char *public_key) {
+void display_address(const unsigned char *public_key, unsigned char *dst) {
     // convert public key from uncompressed to compressed
     unsigned char public_key_compressed[33];
 
@@ -120,5 +120,5 @@ void display_address(const unsigned char *public_key) {
     unsigned char address_base58[ADDRESS_BASE58_LEN];
     to_address(public_key_compressed, address_base58);
 
-    os_memmove(address, address_base58, ADDRESS_BASE58_LEN);
+    os_memmove(dst, address_base58, ADDRESS_BASE58_LEN);
 }

@@ -5,13 +5,19 @@
 
 #include "sky.h"
 #include "ui.h"
+#include "ux.h"
+
 #include "apdu_handlers.h"
 
+commandContext global;
+// ux_state_t ux;
 
 static void sky_main(void) {
     volatile unsigned int rx = 0;
     volatile unsigned int tx = 0;
     volatile unsigned int flags = 0;
+
+    os_memmove(global.getPublicKeyContext.address, "  No address generated yet         \0", 36); // set default value for address 
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.
@@ -69,40 +75,12 @@ static void sky_main(void) {
     }
 }
 
-
-unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
-    switch (channel & ~(IO_FLAGS)) {
-        case CHANNEL_KEYBOARD:
-            break;
-
-            // multiplexed io exchange over a SPI channel and TLV encapsulated protocol
-        case CHANNEL_SPI:
-            if (tx_len) {
-                io_seproxyhal_spi_send(G_io_apdu_buffer, tx_len);
-
-                if (channel & IO_RESET_AFTER_REPLIED) {
-                    reset();
-                }
-                return 0; // nothing received from the master so far (it's a tx
-                // transaction)
-            } else {
-                return io_seproxyhal_spi_recv(G_io_apdu_buffer,
-                                              sizeof(G_io_apdu_buffer), 0);
-            }
-
-        default:
-            THROW(INVALID_PARAMETER);
-    }
-    return 0;
-}
-
-
 __attribute__((section(".boot"))) int main(void) {
     // exit critical section
     __asm volatile("cpsie i");
 
-    hashTainted = 1;
-    uiState = UI_IDLE;
+    // hashTainted = 1;
+    // uiState = UI_IDLE;
 
     UX_INIT();
 
@@ -121,7 +99,7 @@ __attribute__((section(".boot"))) int main(void) {
                     sky_main();
             }
             CATCH_OTHER(e) {
-            }
+            }   
             FINALLY {
             }
     }

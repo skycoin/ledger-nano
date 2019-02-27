@@ -3,7 +3,7 @@
 
 #include "os.h"
 #include "cx.h"
-#include "ui.h"
+#include "ux.h"
 #include <stdbool.h>
 #include "os_io_seproxyhal.h"
 
@@ -16,6 +16,6 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result);
 static void to_address(const unsigned char *public_key_compressed, char *result);
 
 /** displays the address in base58 */
-void display_address(const unsigned char * public_key);
+void display_address(const unsigned char * public_key, unsigned char *dst);
 
 #endif

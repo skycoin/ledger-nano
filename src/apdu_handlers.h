@@ -3,7 +3,7 @@
 
 #include "os.h"
 #include "sky.h"
-#include "ui.h"
+#include "ux.h"
 
 /** #### instructions start #### **/
 
@@ -26,6 +26,15 @@
 #define INS_RET_SUCCESS 0x9000
 
 /** #### instructions end #### */
+
+#define APDU_HEADER_LENGTH 5 // length of the APDU (application protocol data unit) header
+#define APDU_BODY_LENGTH_OFFSET 4 // offset in the APDU header which says the length of the body
+
+#define P1_LAST 0x80 // for signing, indicates this is the last part of the transaction
+#define P1_MORE 0x00 // for signing, indicates this is not the last part of the transaction, there are more parts coming
+
+#define BIP44_PATH_LEN 5 // length of BIP44 path
+#define BIP44_BYTE_LENGTH (BIP44_PATH_LEN * sizeof(unsigned int)) // length of BIP44 path, in bytes
 
 /** Offsets of different pars of ADPU. */
 /** start of the buffer, reject any transmission that doesn't start with this, as it's invalid. */
