@@ -17,8 +17,7 @@ handler_fn_t *lookupHandler(uint8_t ins) {
 
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                         volatile unsigned int *tx) {
-    cx_ecfp_public_key_t publicKey;
-    cx_ecfp_private_key_t privateKey;
+    cx_ecfp_public_key_t public_key;
 
     unsigned int bip44_path[BIP44_PATH_LEN];
     uint32_t i;
@@ -27,20 +26,14 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
                         (dataBuffer[3]);
         dataBuffer += 4;
     }
-    unsigned char privateKeyData[32];
-    os_perso_derive_node_bip32(CX_CURVE_256K1, bip44_path, BIP44_PATH_LEN, privateKeyData,
-                               NULL);
-    cx_ecdsa_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &privateKey);
-
-    // generate the public key.
-    cx_ecdsa_init_public_key(CX_CURVE_256K1, NULL, 0, &publicKey);
-    cx_ecfp_generate_pair(CX_CURVE_256K1, &publicKey, &privateKey, 1);
+    
+    derive_keypair(bip44_path, NULL, &public_key);
 
     // push the public key onto the response buffer.
-    os_memmove(G_io_apdu_buffer, publicKey.W, 65);
+    os_memmove(G_io_apdu_buffer, public_key.W, 65);
     *tx = 65;
 
-    generate_address(publicKey.W, global.getPublicKeyContext.address);
+    generate_address(public_key.W, global.getPublicKeyContext.address);
     screen_printf("Address: %s\n", global.getPublicKeyContext.address);
 
     THROW(INS_RET_SUCCESS);
