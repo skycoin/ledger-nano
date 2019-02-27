@@ -21,7 +21,7 @@ void handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint1
     cx_ecfp_private_key_t private_key;
     unsigned int bip44_path[BIP44_PATH_LEN];
 
-    get_bip44_path(dataBuffer, bip44_path);    
+    get_bip44_path(dataBuffer, bip44_path);
     derive_keypair(bip44_path, &private_key, &public_key);
 
     unsigned char result[32];
@@ -39,6 +39,7 @@ void handleGetVersion(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     G_io_apdu_buffer[0] = APPVERSION[0] - '0';
     G_io_apdu_buffer[1] = APPVERSION[2] - '0';
     G_io_apdu_buffer[2] = APPVERSION[4] - '0';
+    *tx += 3;
     THROW(INS_RET_SUCCESS);
 }
 
