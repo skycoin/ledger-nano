@@ -45,12 +45,15 @@ install:
     sudo apt-get install gcc-multilib g++-multilib;
     fi
 
-  - make install-linters
+  - sudo pip install --user Pillow
 
 script:
-    - make lint # Check code quality
-    - make all # test if project compiles
-    - make clean
+    - sudo make all # test if project compiles
+    - sudo make clean
+
+    # - make install-linters
+    # - make lint # Check code quality
+
 
 after_success:
     - ccache --show-stats
