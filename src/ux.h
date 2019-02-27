@@ -15,6 +15,7 @@ typedef struct {
 	uint8_t displayIndex;
 
     char address[36]; // set default value for address
+	char address_copy[40]; // copy of address to be then displayed as scrolling text (for UI needs only)
 
 	// // NUL-terminated strings for display
 	// uint8_t typeStr[40]; // variable-length
@@ -33,6 +34,21 @@ typedef struct {
 
 extern commandContext global;
 extern ux_state_t ux;
+
+
+// ********************************************************************************
+// Defines for easier UI structures usage
+// ********************************************************************************
+#define DEFAULT_FONT BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER // default font
+#define TX_DESC_FONT BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER // text description font
+#define COLOR_WHITE 0xFFFFFF // White color (hex)
+#define SCREEN_MAX_CHARS 16 // Maximum number of characters to be displayed on screen(for scrolling text only)
+
+#define UI_BACKGROUND() {{BAGL_RECTANGLE,0,0,0,128,32,0,0,BAGL_FILL,0,0xFFFFFF,0,0},NULL,0,0,0,NULL,NULL,NULL}
+#define UI_ICON_LEFT(userid, glyph) {{BAGL_ICON,userid,3,12,7,7,0,0,0,0xFFFFFF,0,0,glyph},NULL,0,0,0,NULL,NULL,NULL}
+#define UI_ICON_RIGHT(userid, glyph) {{BAGL_ICON,userid,117,13,8,6,0,0,0,0xFFFFFF,0,0,glyph},NULL,0,0,0,NULL,NULL,NULL}
+#define UI_TEXT(userid, x, y, w, text) {{BAGL_LABELINE,userid,x,y,w,12,0,0,0,0xFFFFFF,0,BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER,0},(char *)text,0,0,0,NULL,NULL,NULL}
+
 
 #endif
 

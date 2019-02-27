@@ -10,7 +10,6 @@
 #include "apdu_handlers.h"
 
 commandContext global;
-// ux_state_t ux;
 
 static void sky_main(void) {
     volatile unsigned int rx = 0;
@@ -78,9 +77,6 @@ static void sky_main(void) {
 __attribute__((section(".boot"))) int main(void) {
     // exit critical section
     __asm volatile("cpsie i");
-
-    // hashTainted = 1;
-    // uiState = UI_IDLE;
 
     UX_INIT();
 

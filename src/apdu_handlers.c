@@ -1,8 +1,5 @@
 #include "apdu_handlers.h"
 
-// commandContext global;
-// ux_state_t ux;
-
 handler_fn_t *lookupHandler(uint8_t ins) {
     switch (ins) {
         case INS_GET_VERSION:

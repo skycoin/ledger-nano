@@ -18,16 +18,9 @@
 /** the current version in the address field */
 #define ADDRESS_VERSION 0
 
-// /** Label when a public key has not been set yet */
-// static const char NO_PUBLIC_KEY_0[] = "No Public Key";
-// static const char NO_PUBLIC_KEY_1[] = "Requested Yet";
-
-
 /** array of base58 alphabet letters */
 static const char BASE_58_ALPHABET[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-// /** blank string, used for clearing a line of text */
-// static const char TXT_BLANK[] = "                 ";
 
 int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     const unsigned char *pend = pbegin + len;

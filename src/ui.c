@@ -11,9 +11,9 @@ uint8_t ux_loop_over_curr_element; // only for Nano S
 // Main menu with settings, about, version app and ability to quit the app
 // ********************************************************************************
 
-void go_to_address(unsigned int userid);
+void go_to_address_screen(unsigned int userid);
 const ux_menu_entry_t menu_settings[] = {
-    {NULL, go_to_address, 0, NULL, "Address", NULL, 0, 0},
+    {NULL, go_to_address_screen, 0, NULL, "Address", NULL, 0, 0},
     {menu_main, NULL, 1, &C_nanos_icon_back, "Back", NULL, 61, 40},
     UX_MENU_END};
 
