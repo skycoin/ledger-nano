@@ -5,55 +5,7 @@
 
 #include "sky.h"
 #include "ui.h"
-
-/** #### instructions start #### **/
-    /** start of the buffer, reject any transmission that doesn't start with this, as it's invalid. */
-    #define CLA 0x80
-
-    /** instruction to reset . */
-    #define INS_RESET 0x00
-
-    /** instruction to sign transaction and send back the signature. */
-    #define INS_SIGN 0x02
-
-    /** instruction to send back the public key. */
-    #define INS_GET_PUBLIC_KEY 0x04
-
-    /** instruction to send back the public key, and a signature of the private key signing the public key. */
-    #define INS_GET_SIGNED_PUBLIC_KEY 0x08
-
-    /** instruction to send back the public key, and a signature of the private key signing the public key. */
-    #define INS_RET_SUCCESS 0x9000
-/** #### instructions end #### */
-
-static void refresh_public_key_display(void);
-
-
-unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
-    switch (channel & ~(IO_FLAGS)) {
-    case CHANNEL_KEYBOARD:
-        break;
-
-    // multiplexed io exchange over a SPI channel and TLV encapsulated protocol
-    case CHANNEL_SPI:
-        if (tx_len) {
-            io_seproxyhal_spi_send(G_io_apdu_buffer, tx_len);
-
-            if (channel & IO_RESET_AFTER_REPLIED) {
-                reset();
-            }
-            return 0; // nothing received from the master so far (it's a tx
-                      // transaction)
-        } else {
-            return io_seproxyhal_spi_recv(G_io_apdu_buffer,
-                                          sizeof(G_io_apdu_buffer), 0);
-        }
-
-    default:
-        THROW(INVALID_PARAMETER);
-    }
-    return 0;
-}
+#include "apdu_handlers.h"
 
 
 static void sky_main(void) {
@@ -70,157 +22,108 @@ static void sky_main(void) {
     for (;;) {
         volatile unsigned short sw = 0;
 
-        BEGIN_TRY {
-            TRY {
-                rx = tx;
-                tx = 0; 
-                // ensure no race in catch_other if io_exchange throws an error
-                rx = io_exchange(CHANNEL_APDU | flags, rx);
-                flags = 0;
+        BEGIN_TRY{
+                TRY{
+                        rx = tx;
+                        tx = 0;
+                        // ensure no race in catch_other if io_exchange throws an error
+                        rx = io_exchange(CHANNEL_APDU | flags, rx);
+                        flags = 0;
 
-                // no apdu received, well, reset the session, and reset the
-                // bootloader configuration
-                if (rx == 0) {
-                    THROW(0x6982);
+                        // no apdu received, well, reset the session, and reset the
+                        // bootloader configuration
+                        if (rx == 0) {
+                            THROW(0x6982);
+                        }
+                        if (G_io_apdu_buffer[0] != CLA) {
+                            THROW(0x6E00);
+                        }
+
+                        // Find function that will handle specific request
+                        handler_fn_t *handlerFn = lookupHandler(G_io_apdu_buffer[OFFSET_INS]);
+                        if (!handlerFn) {
+                            THROW(0x6D00);
+                        }
+                        handlerFn(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2],
+                        G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], &flags, &tx);
                 }
-
-                if (G_io_apdu_buffer[0] != CLA) {
-                    THROW(0x6E00);
-                }
-
-
-                // check the second byte (0x01) for the instruction.
-                switch (G_io_apdu_buffer[1]) {
-                case INS_RESET: // reset
-                    flags |= IO_RESET_AFTER_REPLIED;
-                    THROW(INS_RET_SUCCESS);
-                    break;
-
-                // getting the public key
-                case INS_GET_PUBLIC_KEY: {
-                    cx_ecfp_public_key_t publicKey;
-                    cx_ecfp_private_key_t privateKey;
-
-                    if (rx < APDU_HEADER_LENGTH + BIP32_BYTE_LENGTH) {
-                        hashTainted = 1;
-                        THROW(0x6D09);
+                CATCH_OTHER(e) {
+                    switch (e & 0xF000) {
+                        case 0x6000:
+                        case INS_RET_SUCCESS:
+                            sw = e;
+                            break;
+                        default:
+                            sw = 0x6800 | (e & 0x7FF);
+                            break;
                     }
 
-                    /** BIP44 path, used to derive the private key from the mnemonic by calling os_perso_derive_node_bip32. */
-                    unsigned char * bip32_in = G_io_apdu_buffer + APDU_HEADER_LENGTH;
-
-                    unsigned int bip32_path[BIP44_PATH_LEN];
-                    uint32_t i;
-                    for (i = 0; i < BIP32_PATH_LEN; i++) {
-                        bip32_path[i] = (bip32_in[0] << 24) | (bip32_in[1] << 16) | (bip32_in[2] << 8) | (bip32_in[3]);
-                        bip32_in += 4;
-                    }
-                    unsigned char privateKeyData[32];
-                    os_perso_derive_node_bip32(CX_CURVE_256K1, bip32_path, BIP32_PATH_LEN, privateKeyData, NULL);
-                    cx_ecdsa_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &privateKey);
-
-                    // generate the public key.
-                    cx_ecdsa_init_public_key(CX_CURVE_256K1, NULL, 0, &publicKey);
-                    cx_ecfp_generate_pair(CX_CURVE_256K1, &publicKey, &privateKey, 1);
-
-                    // push the public key onto the response buffer.
-                    os_memmove(G_io_apdu_buffer, publicKey.W, 65);
-                    tx = 65;
-
-                    display_address(publicKey.W);
-                    refresh_public_key_display();
-
-                    // return 0x9000 OK.
-                    THROW(INS_RET_SUCCESS);
+                    // Unexpected exception => report
+                    G_io_apdu_buffer[tx++] = sw >> 8;
+                    G_io_apdu_buffer[tx++] = sw & 0xFF;
                 }
-                    break;
-                
-                case 0x01: // case 1
-                    THROW(INS_RET_SUCCESS);
-                    break;
-
-                case 0x02: // echo
-                    tx = rx;
-                    THROW(INS_RET_SUCCESS);
-                    break;
-
-                case 0xFF: // return to dashboard
-                    goto return_to_dashboard;
-
-                default:
-                    THROW(0x6D00);
-                    break;
+                FINALLY {
                 }
-            }
-            CATCH_OTHER(e) {
-                switch (e & 0xF000) {
-                case 0x6000:
-                case 0x9000:
-                    sw = e;
-                    break;
-                default:
-                    sw = 0x6800 | (e & 0x7FF);
-                    break;
-                }
-
-                // Unexpected exception => report
-                G_io_apdu_buffer[tx] = sw >> 8;
-                G_io_apdu_buffer[tx + 1] = sw;
-                tx += 2;
-            }
-            FINALLY {
-            }
         }
         END_TRY;
     }
-
-return_to_dashboard:
-    return;
 }
 
-/** refreshes the display if the public key was changed ans we are on the page displaying the public key */
-static void refresh_public_key_display(void) {
-	if ((uiState == UI_PUBLIC_KEY_1)|| (uiState == UI_PUBLIC_KEY_2)) {
-		publicKeyNeedsRefresh = 1;
-	}
+
+unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
+    switch (channel & ~(IO_FLAGS)) {
+        case CHANNEL_KEYBOARD:
+            break;
+
+            // multiplexed io exchange over a SPI channel and TLV encapsulated protocol
+        case CHANNEL_SPI:
+            if (tx_len) {
+                io_seproxyhal_spi_send(G_io_apdu_buffer, tx_len);
+
+                if (channel & IO_RESET_AFTER_REPLIED) {
+                    reset();
+                }
+                return 0; // nothing received from the master so far (it's a tx
+                // transaction)
+            } else {
+                return io_seproxyhal_spi_recv(G_io_apdu_buffer,
+                                              sizeof(G_io_apdu_buffer), 0);
+            }
+
+        default:
+            THROW(INVALID_PARAMETER);
+    }
+    return 0;
 }
+
 
 __attribute__((section(".boot"))) int main(void) {
     // exit critical section
     __asm volatile("cpsie i");
 
-	hashTainted = 1;
-	uiState = UI_IDLE;
+    hashTainted = 1;
+    uiState = UI_IDLE;
 
     UX_INIT();
 
     // ensure exception will work as planned
     os_boot();
 
-    BEGIN_TRY {
-        TRY {
-            io_seproxyhal_init();   
+    BEGIN_TRY{
+            TRY{
+                    io_seproxyhal_init();
 
-// #ifdef LISTEN_BLE
-//             if (os_seph_features() &
-//                 SEPROXYHAL_TAG_SESSION_START_EVENT_FEATURE_BLE) {
-//                 BLE_power(0, NULL);
-//                 // restart IOs
-//                 BLE_power(1, NULL);
-//             }
-// #endif
+                    USB_power(0);
+                    USB_power(1);
 
-            USB_power(0);
-            USB_power(1);
+                    ui_idle();
 
-            ui_idle();
-
-            sky_main();
-        }
-        CATCH_OTHER(e) {
-        }
-        FINALLY {
-        }
+                    sky_main();
+            }
+            CATCH_OTHER(e) {
+            }
+            FINALLY {
+            }
     }
     END_TRY;
 }

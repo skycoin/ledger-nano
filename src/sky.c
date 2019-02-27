@@ -68,7 +68,7 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     result[i] = '\0';
 }
 
-static void to_address(const unsigned char *public_key_compressed, char *result) {
+void to_address(const unsigned char *public_key_compressed, char *result) {
     /*
      * Address format 1+20=21 bytes:
      *  Version byte + 20 byte RIPMD160(SHA256(SHA256(compressed public key)))
@@ -112,7 +112,7 @@ static void to_address(const unsigned char *public_key_compressed, char *result)
 void display_address(const unsigned char *public_key) {
     // convert public key from uncompressed to compressed
     unsigned char public_key_compressed[33];
-    
+
     // check parity and add appropriate prefix
     public_key_compressed[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
     os_memmove(public_key_compressed + 1, public_key, 32);
