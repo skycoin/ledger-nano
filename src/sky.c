@@ -21,6 +21,13 @@
 /** array of base58 alphabet letters */
 static const char BASE_58_ALPHABET[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
+void get_bip44_path(uint8_t *dataBuffer, unsigned int bip44_path[]){
+    for (uint32_t i = 0; i < BIP44_PATH_LEN; i++) {
+        bip44_path[i] = (dataBuffer[0] << 24) | (dataBuffer[1] << 16) | (dataBuffer[2] << 8) |
+                        (dataBuffer[3]);
+        dataBuffer += 4;
+    }
+}
 
 int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     const unsigned char *pend = pbegin + len;
@@ -102,7 +109,7 @@ void to_address(const unsigned char *public_key_compressed, char *result) {
     encode_base_58(result, ADDRESS_LEN, result);
 }
 
-void derive_keypair(unsigned int bip44_path[BIP44_PATH_LEN], cx_ecfp_private_key_t *private_key, cx_ecfp_public_key_t *public_key){
+void derive_keypair(unsigned int bip44_path[], cx_ecfp_private_key_t *private_key, cx_ecfp_public_key_t *public_key){
     unsigned char private_key_data[32];
     cx_ecfp_private_key_t pk;
 

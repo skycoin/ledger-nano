@@ -18,15 +18,9 @@ handler_fn_t *lookupHandler(uint8_t ins) {
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                         volatile unsigned int *tx) {
     cx_ecfp_public_key_t public_key;
-
     unsigned int bip44_path[BIP44_PATH_LEN];
-    uint32_t i;
-    for (i = 0; i < BIP44_PATH_LEN; i++) {
-        bip44_path[i] = (dataBuffer[0] << 24) | (dataBuffer[1] << 16) | (dataBuffer[2] << 8) |
-                        (dataBuffer[3]);
-        dataBuffer += 4;
-    }
-    
+
+    get_bip44_path(dataBuffer, bip44_path);    
     derive_keypair(bip44_path, NULL, &public_key);
 
     // push the public key onto the response buffer.
@@ -34,6 +28,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     *tx = 65;
 
     generate_address(public_key.W, global.getPublicKeyContext.address);
+    screen_printf("Public key: %s\n", public_key.W);
     screen_printf("Address: %s\n", global.getPublicKeyContext.address);
 
     THROW(INS_RET_SUCCESS);
@@ -49,8 +44,24 @@ void handleGetVersion(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 
 void handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                               volatile unsigned int *tx) {
+                                   cx_ecfp_public_key_t public_key;
 }
 
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                       volatile unsigned int *tx) {
+    cx_ecfp_public_key_t public_key;
+    unsigned int bip44_path[BIP44_PATH_LEN];
+
+    get_bip44_path(dataBuffer, bip44_path);
+    derive_keypair(bip44_path, NULL, &public_key);
+
+    generate_address(public_key.W, global.getPublicKeyContext.address);
+    screen_printf("Public key: %s\n", public_key.W);
+    screen_printf("Address: %s\n", global.getPublicKeyContext.address);
+
+    // push the public key onto the response buffer.
+    os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, 35);
+    *tx = 35;
+
+    THROW(INS_RET_SUCCESS);
 }

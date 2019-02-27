@@ -27,8 +27,6 @@
 /** General defines for APDU and BIP44 parts */
 #define APDU_HEADER_LENGTH 5 // length of the APDU (application protocol data unit) header
 #define APDU_BODY_LENGTH_OFFSET 4 // offset in the APDU header which says the length of the body
-#define BIP44_PATH_LEN 5 // length of BIP44 path
-#define BIP44_BYTE_LENGTH (BIP44_PATH_LEN * sizeof(unsigned int)) // length of BIP44 path, in bytes
 
 
 typedef void handler_fn_t(
@@ -58,9 +56,6 @@ void handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint1
 
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                       volatile unsigned int *tx);
-
-/** refreshes the display if the public key was changed and we are on the page displaying the public key */
-static void refresh_public_key_display(void);
 
 #endif //SKYCOIN_APDU_HANDLERS_H
 

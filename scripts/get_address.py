@@ -15,8 +15,8 @@ bip44_path = ( # example of bip44 path
 
 dongle = getDongle(True)
 
-public_key = dongle.exchange(
-    bytes(bytearray.fromhex("80040000FF" + bip44_path)))
+address = dongle.exchange(
+    bytes(bytearray.fromhex("80020000FF" + bip44_path))) # the main part here is 02 -> instruction code for get_address
 
 print "\n"
-print "public_key [" + str(len(binascii.hexlify(public_key))) + "] = " + binascii.hexlify(public_key)
+print "address [" + str(len(binascii.hexlify(address))) + "] = " + binascii.hexlify(address)
