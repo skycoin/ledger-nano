@@ -51,8 +51,8 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     derive_keypair(bip44_path, NULL, &public_key);
 
     // push the public key onto the response buffer.
-    os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, 35);
-    *tx = 35;
+    os_memmove(G_io_apdu_buffer, public_key.W, 65);
+    *tx += 65;
 
     THROW(INS_RET_SUCCESS);
 }
@@ -69,9 +69,9 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     screen_printf("Public key: %s\n", public_key.W);
     screen_printf("Address: %s\n", global.getPublicKeyContext.address);
 
-    // push the public key onto the response buffer.
+    // push the address onto the response buffer.
     os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, 35);
-    *tx = 35;
+    *tx += 35;
 
     THROW(INS_RET_SUCCESS);
 }
