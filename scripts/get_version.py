@@ -1,7 +1,7 @@
 from adpu_call import send_to_ledger
 import binascii
 
-version = send_to_ledger("01")
+version = send_to_ledger(ins=0x01, le=3)
 
 print "\n"
-print "address [" + str(len(binascii.hexlify(version))) + "] = " + binascii.hexlify(version)
+print "version [" + str(len(binascii.hexlify(version))) + "] = " + binascii.hexlify(version)
