@@ -23,8 +23,7 @@ static const char BASE_58_ALPHABET[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefg
 
 void get_bip44_path(uint8_t *dataBuffer, unsigned int bip44_path[]){
     for (uint32_t i = 0; i < BIP44_PATH_LEN; i++) {
-        bip44_path[i] = (dataBuffer[0] << 24) | (dataBuffer[1] << 16) | (dataBuffer[2] << 8) |
-                        (dataBuffer[3]);
+        bip44_path[i] = U4BE(dataBuffer, 0);
         dataBuffer += 4;
     }
 }
