@@ -3,6 +3,8 @@
 
 #include "cx.h"
 #include "os_io_seproxyhal.h"
+#include "stdbool.h"
+#include "txn.h"
 
 #define BIP44_PATH_LEN 5 // length of BIP44 path
 #define BIP44_BYTE_LENGTH (BIP44_PATH_LEN * sizeof(unsigned int)) // length of BIP44 path, in bytes
@@ -17,9 +19,15 @@ typedef struct {
 	char address_copy[40]; // copy of address to be then displayed as scrolling text (for UI needs only)
 } getPublicKeyContext_t;
 
+typedef struct {
+	bool initialized;
+	txn_state_t txn_state;
+//	txn_t txn;
+} signTxnContext_t;
 
 typedef struct {
 	getPublicKeyContext_t getPublicKeyContext;
+	signTxnContext_t signTxnContext;
 } commandContext;
 
 extern commandContext global;

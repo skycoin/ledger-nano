@@ -1,5 +1,9 @@
 #include "apdu_handlers.h"
 
+#include "ux.h"
+
+static signTxnContext_t *ctx = &global.signTxnContext;
+
 handler_fn_t *lookupHandler(uint8_t ins) {
     switch (ins) {
         case INS_GET_VERSION:
@@ -10,6 +14,8 @@ handler_fn_t *lookupHandler(uint8_t ins) {
             return handleGetSignedPublicKey;
         case INS_GET_ADDRESS:
             return handleGetAddress;
+        case INS_SIGN_TRANSACTION:
+            return handleSignTxn;
         default:
             return NULL;
     }
@@ -73,6 +79,34 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     // push the address onto the response buffer.
     os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, 35);
     *tx += 35;
+
+    THROW(INS_RET_SUCCESS);
+}
+
+void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
+                   volatile unsigned int *tx) {
+    screen_printf("Init %d\n", ctx->initialized);
+    if(!ctx->initialized) {
+        ctx->txn_state = TXN_STARTED;
+        ctx->initialized = true;
+    }
+    screen_printf("state %d\n", ctx->txn_state);
+    switch (ctx->txn_state) {
+        case TXN_STARTED: {
+            screen_printf("txn started");
+            PRINTF("Txn %.*H\n", 256, dataBuffer);
+            break;
+        }
+        case TXN_PARTIAL: {
+            break;
+        }
+        case TXN_READY: {
+            break;
+        }
+        case TXN_ERROR: {
+            break;
+        }
+    }
 
     THROW(INS_RET_SUCCESS);
 }

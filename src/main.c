@@ -16,7 +16,9 @@ static void sky_main(void) {
     volatile unsigned int tx = 0;
     volatile unsigned int flags = 0;
 
-    os_memmove(global.getPublicKeyContext.address, "  No address generated yet         \0", 36); // set default value for address 
+    os_memmove(global.getPublicKeyContext.address, "  No address generated yet         \0", 36); // set default value for address
+    global.signTxnContext.initialized = 0;
+//    os_memmove(global.signTxnContext.initialized, 0, 1);
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.

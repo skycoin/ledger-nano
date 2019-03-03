@@ -6,12 +6,13 @@
 #include "ux.h"
 
 /** Instructions start **/
-#define INS_RESET 0x00 // instruction to reset
-#define INS_GET_VERSION 0x01 // instruction to send back version on program
-#define INS_GET_ADDRESS 0x02 // instruction to send back the address
-#define INS_GET_PUBLIC_KEY 0x04 // instruction to send back the public key
-#define INS_GET_SIGNED_PUBLIC_KEY 0x08 // instruction to send back the public key, and a signature of the private key signing the public key
-#define INS_RET_SUCCESS 0x9000 // instruction to send back the public key, and a signature of the private key signing the public key
+#define INS_RESET 0x00                  // instruction to reset
+#define INS_GET_VERSION 0x01            // instruction to send back version on program
+#define INS_GET_ADDRESS 0x02            // instruction to send back the address
+#define INS_GET_PUBLIC_KEY 0x04         // instruction to send back the public key
+#define INS_GET_SIGNED_PUBLIC_KEY 0x08  // instruction to send back the public key, and a signature of the private key signing the public key
+#define INS_SIGN_TRANSACTION 0x10       // instruction to sign a transaction
+#define INS_RET_SUCCESS 0x9000          // instruction to send back success
 /** Instructions end */
 
 /** Offsets of different pars of ADPU. */
@@ -42,6 +43,7 @@ handler_fn_t handleGetVersion;
 handler_fn_t handleGetPublicKey;
 handler_fn_t handleGetSignedPublicKey;
 handler_fn_t handleGetAddress;
+handler_fn_t handleSignTxn;
 
 handler_fn_t *lookupHandler(uint8_t ins);
 
@@ -55,6 +57,9 @@ void handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint1
                          volatile unsigned int *tx);
 
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
+                      volatile unsigned int *tx);
+
+void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                       volatile unsigned int *tx);
 
 #endif //SKYCOIN_APDU_HANDLERS_H
