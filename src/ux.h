@@ -22,7 +22,10 @@ typedef struct {
 typedef struct {
 	bool initialized;
 	txn_state_t txn_state;
-//	txn_t txn;
+	txn_t txn;
+	unsigned char buffer[65];
+	unsigned char offset;
+	unsigned char curr_obj;
 } signTxnContext_t;
 
 typedef struct {
