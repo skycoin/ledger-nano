@@ -21,7 +21,7 @@
 /** array of base58 alphabet letters */
 static const char BASE_58_ALPHABET[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-void get_bip44_path(uint8_t *dataBuffer, unsigned int bip44_path[]){
+void get_bip44_path(uint8_t *dataBuffer, unsigned int bip44_path[]) {
     for (uint32_t i = 0; i < BIP44_PATH_LEN; i++) {
         bip44_path[i] = U4BE(dataBuffer, 0);
         dataBuffer += 4;
@@ -67,6 +67,22 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     result[i] = '\0';
 }
 
+void address_to_base58(const unsigned char *address, char *result) {
+    static cx_sha256_t address_hash;
+
+    os_memmove(result, address + 1, RIPMD_HASH_LEN);
+    result[20] = address[0];
+
+    // add checksum to address
+    unsigned char checksum[SHA256_HASH_LEN];
+    cx_sha256_init(&address_hash);
+    cx_hash(&address_hash.header, CX_LAST, result, 21, checksum);
+    os_memmove(result + 21, checksum, 4);
+
+    //encode address to base58
+    encode_base_58(result, ADDRESS_LEN, result);
+}
+
 void to_address(const unsigned char *public_key_compressed, char *result) {
     /*
      * Address format 1+20=21 bytes:
@@ -108,7 +124,7 @@ void to_address(const unsigned char *public_key_compressed, char *result) {
     encode_base_58(result, ADDRESS_LEN, result);
 }
 
-void derive_keypair(unsigned int bip44_path[], cx_ecfp_private_key_t *private_key, cx_ecfp_public_key_t *public_key){
+void derive_keypair(unsigned int bip44_path[], cx_ecfp_private_key_t *private_key, cx_ecfp_public_key_t *public_key) {
     unsigned char private_key_data[32];
     cx_ecfp_private_key_t pk;
 
@@ -116,18 +132,18 @@ void derive_keypair(unsigned int bip44_path[], cx_ecfp_private_key_t *private_ke
                                NULL);
     cx_ecdsa_init_private_key(CX_CURVE_256K1, private_key_data, 32, &pk);
 
-    if(public_key){
+    if (public_key) {
         // generate the public key.
         cx_ecdsa_init_public_key(CX_CURVE_256K1, NULL, 0, public_key);
         cx_ecfp_generate_pair(CX_CURVE_256K1, public_key, &pk, 1);
     }
 
     if (private_key) {
-		*private_key = pk;
-	}
+        *private_key = pk;
+    }
 
     os_memset(private_key_data, 0, sizeof(private_key_data));
-	os_memset(&pk, 0, sizeof(pk));
+    os_memset(&pk, 0, sizeof(pk));
 }
 
 void generate_address(const unsigned char *public_key, unsigned char *dst) {

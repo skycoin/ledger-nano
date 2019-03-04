@@ -5,9 +5,9 @@
 #define MAX_OUTPUTS 10
 
 typedef struct {
-    char address[21];
-    unsigned long int coin_num;
-    unsigned long int hour_num;
+    unsigned char address[21];
+    uint64_t coin_num; // To get actual amount of coins, you should divide by 10^6
+    uint64_t hour_num;
 } txn_output_t;
 
 typedef struct {

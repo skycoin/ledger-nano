@@ -1,6 +1,10 @@
+#include <inttypes.h>
 #include "apdu_handlers.h"
 
+#include "sky.h"
 #include "ux.h"
+
+#define U8LE(buf, off) (((uint64_t)(U4LE(buf, off + 4)) << 32) | ((uint64_t)(U4LE(buf, off))     & 0xFFFFFFFF))
 
 static signTxnContext_t *ctx = &global.signTxnContext;
 
@@ -87,12 +91,10 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 
 void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                    volatile unsigned int *tx) {
-    screen_printf("Init %d\n", ctx->initialized);
     if (!ctx->initialized) {
         ctx->txn_state = TXN_STARTED;
         ctx->initialized = true;
     }
-    screen_printf("state %d\n", ctx->txn_state);
     while (dataLength) {
         switch (ctx->txn_state) {
             case TXN_STARTED: {
@@ -102,18 +104,22 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 ctx->txn.type = dataBuffer[4];
                 // Next 32 bytes are inner hash
                 os_memmove(ctx->txn.inner_hash, dataBuffer + 5, 32);
+
                 dataBuffer += 37;
                 dataLength -= 37;
+
                 ctx->txn_state = TXN_START_SIG;
                 break;
             }
             case TXN_START_SIG: {
                 ctx->txn.sig_num = U4LE(dataBuffer, 0);
-                screen_printf("Number of sigs %u\n", ctx->txn.sig_num);
+
                 ctx->curr_obj = 0;
                 ctx->offset = 0;
+
                 dataBuffer += 4;
                 dataLength -= 4;
+
                 ctx->txn_state = TXN_SIG;
                 break;
             }
@@ -123,15 +129,13 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     os_memmove(ctx->buffer, dataBuffer, dataLength);
                     ctx->offset = dataLength;
                 } else {
-                    screen_printf("Offset %u\n", ctx->offset);
                     os_memmove(ctx->buffer + ctx->offset, dataBuffer, 65 - ctx->offset);
+
                     dataBuffer += 65 - ctx->offset;
                     dataLength -= 65 - ctx->offset;
                     ctx->offset = 0;
 
                     os_memmove(ctx->txn.sigs[ctx->curr_obj], ctx->buffer, 65);
-
-                    ctx->offset = 0;
                     ctx->curr_obj += 1;
                 }
                 if (ctx->curr_obj == ctx->txn.sig_num) {
@@ -139,36 +143,121 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 }
                 break;
             }
-            case TXN_IN: {
-                if(ctx->offset != 0) {
+            case TXN_START_IN: {
+                // 4 bytes are number of inputs
+                if (ctx->offset != 0) {
                     ctx->txn_state = TXN_ERROR;
-                }
+                } else if (dataLength < 4) {
+                    os_memmove(ctx->buffer, dataBuffer, dataLength);
+                    ctx->offset = dataLength;
+                } else {
+                    ctx->txn.in_num = U4LE(dataBuffer, 0);
+                    ctx->curr_obj = 0;
 
+                    dataBuffer += 4;
+                    dataLength -= 4;
+
+                    ctx->txn_state = TXN_IN;
+                    if (ctx->txn.in_num != ctx->txn.sig_num) {
+                        ctx->txn_state = TXN_ERROR;
+                    }
+                }
+                break;
+            }
+            case TXN_IN: {
+                // 32 bytes are input
+                if (ctx->offset + dataLength < 32) {
+                    os_memmove(ctx->buffer, dataBuffer, dataLength);
+                    ctx->offset = dataLength;
+                } else {
+                    os_memmove(ctx->buffer + ctx->offset, dataBuffer, 32 - ctx->offset);
+
+                    dataBuffer += 32 - ctx->offset;
+                    dataLength -= 32 - ctx->offset;
+                    ctx->offset = 0;
+
+                    os_memmove(ctx->txn.inputs[ctx->curr_obj], ctx->buffer, 32);
+                    ctx->curr_obj += 1;
+                }
+                if (ctx->curr_obj == ctx->txn.in_num) {
+                    ctx->txn_state = TXN_START_OUT;
+                }
+                break;
+            }
+            case TXN_START_OUT: {
+                // 4 bytes are number of outputs
+                if (ctx->offset != 0) {
+                    ctx->txn_state = TXN_ERROR;
+                } else if (dataLength < 4) {
+                    os_memmove(ctx->buffer, dataBuffer, dataLength);
+                    ctx->offset = dataLength;
+                } else {
+                    ctx->txn.out_num = U4LE(dataBuffer, 0);
+                    ctx->curr_obj = 0;
+
+                    dataBuffer += 4;
+                    dataLength -= 4;
+
+                    ctx->txn_state = TXN_OUT;
+                }
                 break;
             }
             case TXN_OUT: {
+                // 37 bytes are input
+                if (ctx->offset + dataLength < 37) {
+                    os_memmove(ctx->buffer, dataBuffer, dataLength);
+                    ctx->offset = dataLength;
+                } else {
+                    os_memmove(ctx->buffer + ctx->offset, dataBuffer, 37 - ctx->offset);
 
+                    dataBuffer += 37 - ctx->offset;
+                    dataLength -= 37 - ctx->offset;
+                    ctx->offset = 0;
+
+                    txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj];
+                    os_memmove(cur_out->address, ctx->buffer, 21);
+
+                    cur_out->coin_num = U8LE(ctx->buffer, 21);
+                    cur_out->hour_num = U8LE(ctx->buffer, 29);
+
+                    ctx->curr_obj += 1;
+                }
+                if (ctx->curr_obj == ctx->txn.out_num) {
+                    ctx->txn_state = TXN_READY;
+                }
                 break;
             }
             case TXN_READY: {
-
+                dataLength = 0;
                 break;
             }
             case TXN_ERROR: {
                 screen_printf("Some problem in transaction happened");
-                THROW(0x6666)
+                THROW(0x6666);
                 break;
             }
         }
-        if (ctx->txn_state == TXN_START_IN) {
+        if (ctx->txn_state == TXN_READY) {
             break;
         }
     }
-
     screen_printf("Len of txn: %u\n", ctx->txn.len);
     screen_printf("Type of txn: %c\n", ctx->txn.type);
-    PRINTF("Inner hash %.*h\n", 32, ctx->txn.inner_hash);
-    PRINTF("Signature %.*h\n", 65, ctx->txn.sigs[0]);
+    PRINTF("Inner hash %.*h\n\n", 32, ctx->txn.inner_hash);
+    screen_printf("Number of sigs %u\n", ctx->txn.sig_num);
+    PRINTF("Signature %.*h\n\n", 65, ctx->txn.sigs[0]);
+    screen_printf("Number of inputs %u\n", ctx->txn.in_num);
+    PRINTF("Input %.*h\n\n", 32, ctx->txn.inputs[0]);
+    screen_printf("Number of outputs %u\n", ctx->txn.out_num);
+    for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
+        char address[35];
+        txn_output_t *cur_out = &ctx->txn.outputs[i];
+        address_to_base58(cur_out->address, address);
+        address[34] = '\0';
+        screen_printf("Output address %s\n", address);
+        screen_printf("Number of coins %u\n", (unsigned long int) cur_out->coin_num);
+        screen_printf("Number of hours %u\n", (unsigned long int) cur_out->hour_num);
+    }
 
     THROW(INS_RET_SUCCESS);
 }
