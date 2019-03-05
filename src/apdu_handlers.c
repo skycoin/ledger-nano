@@ -205,7 +205,6 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     dataLength -= 4;
 
                     ctx->txn_state = TXN_OUT;
-                    screen_printf("Number of outs %u\n", ctx->txn.out_num);
                 }
                 break;
             }
@@ -230,7 +229,6 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     cur_out->hour_num = U8LE(ctx->buffer, 29);
 
                     ctx->curr_obj += 1;
-                    screen_printf("Now in %u\n", ctx->curr_obj);
                 }
                 if (ctx->curr_obj == ctx->txn.out_num) {
                     ctx->txn_state = TXN_READY;
@@ -238,41 +236,41 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 break;
             }
             case TXN_READY: {
-                screen_printf("TXN READY\n");
                 ctx->initialized = false;
-                dataLength = 0;
                 break;
             }
             case TXN_ERROR: {
                 screen_printf("Some problem in transaction happened");
-                THROW(0x6666);
+                THROW(0x6B00);
                 break;
             }
         }
         if(ctx->txn_state == TXN_READY) {
-            screen_printf("TXN READY\n");
             ctx->initialized = false;
-            dataLength = 0;
             break;
         }
     }
     if (!ctx->initialized) {
+        // If ctx is not initialized, than we read our txn fully
         screen_printf("Len of txn: %u\n", ctx->txn.len);
         screen_printf("Type of txn: %c\n", ctx->txn.type);
-        PRINTF("Inner hash %.*h\n\n", 32, ctx->txn.inner_hash);
-        screen_printf("Number of sigs %u\n", ctx->txn.sig_num);
-        PRINTF("Signature %.*h\n\n", 65, ctx->txn.sigs[0]);
-        screen_printf("Number of inputs %u\n", ctx->txn.in_num);
-        PRINTF("Input %.*h\n\n", 32, ctx->txn.inputs[0]);
-        screen_printf("Number of outputs %u\n", ctx->txn.out_num);
+        PRINTF("Inner hash %.*h\n", 32, ctx->txn.inner_hash);
+        screen_printf("\nNumber of sigs %u\n", ctx->txn.sig_num);
+        for(unsigned int i = 0; i < ctx->txn.in_num; i++) {
+            PRINTF("    Signature %.*h\n", 65, ctx->txn.sigs[i]);
+        }
+        screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
+        for(unsigned int i = 0; i < ctx->txn.in_num; i++) {
+            PRINTF("    Input %.*h\n", 32, ctx->txn.inputs[i]);
+        }
+        screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
         for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
-            char address[35];
+            char address[36];
             txn_output_t *cur_out = &ctx->txn.outputs[i];
             address_to_base58(cur_out->address, address);
-            address[34] = '\0';
-            screen_printf("Output address %s\n", address);
-            screen_printf("Number of coins %u\n", (unsigned long int) cur_out->coin_num);
-            screen_printf("Number of hours %u\n", (unsigned long int) cur_out->hour_num);
+            screen_printf("    Output address %s\n", address);
+            screen_printf("    Number of coins %u\n", (unsigned long int) cur_out->coin_num);
+            screen_printf("    Number of hours %u\n\n", (unsigned long int) cur_out->hour_num);
         }
     }
 
