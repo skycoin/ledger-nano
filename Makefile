@@ -30,6 +30,11 @@ endif
 # Build configuration    #
 ##########################
 
+# import rules to compile glyphs(/pone)
+include $(BOLOS_SDK)/Makefile.glyphs
+$(exec_prefix)
+
+
 APP_SOURCE_PATH += src
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 
@@ -37,7 +42,7 @@ DEFINES += APPVERSION=\"$(APPVERSION)\"
 
 DEFINES += OS_IO_SEPROXYHAL IO_SEPROXYHAL_BUFFER_SIZE_B=128
 DEFINES += HAVE_BAGL HAVE_SPRINTF
-DEFINES += PRINTF\(...\)=
+DEFINES += HAVE_SPRINTF HAVE_PRINTF PRINTF=screen_printf
 
 DEFINES += HAVE_IO_USB HAVE_L4_USBLIB IO_USB_MAX_ENDPOINTS=7 IO_HID_EP_LENGTH=64 HAVE_USB_APDU
 
@@ -75,7 +80,7 @@ LDLIBS += -lm -lgcc -lc
 # Main rules      #
 ###################
 
-all: default
+all: default ## all: Compile everything
 
 install-linters-Darwin:
 	brew install yamllint
