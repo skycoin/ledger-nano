@@ -112,13 +112,12 @@ void derive_keypair(unsigned int bip44_path[], cx_ecfp_private_key_t *private_ke
     unsigned char private_key_data[32];
     cx_ecfp_private_key_t pk;
 
-    os_perso_derive_node_bip32(CX_CURVE_256K1, bip44_path, BIP44_PATH_LEN, private_key_data,
-                               NULL);
-    cx_ecdsa_init_private_key(CX_CURVE_256K1, private_key_data, 32, &pk);
+    os_perso_derive_node_bip32(CX_CURVE_256K1, bip44_path, BIP44_PATH_LEN, private_key_data, NULL);
+    cx_ecfp_init_private_key(CX_CURVE_256K1, private_key_data, 32, &pk);
 
     if(public_key){
         // generate the public key.
-        cx_ecdsa_init_public_key(CX_CURVE_256K1, NULL, 0, public_key);
+        cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, public_key);
         cx_ecfp_generate_pair(CX_CURVE_256K1, public_key, &pk, 1);
     }
 
