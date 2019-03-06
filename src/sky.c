@@ -41,14 +41,14 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     for (int i = 0; i < 35; i++) {
         b58[i] = 0;
     }
-    int size = len * 138 / 100 + 1;
+    int size = (pend - pbegin) * 138 / 100 + 1;
     // Found all remainders
     while (pbegin != pend) {
         int carry = *pbegin;
         int i = 0;
         // Apply "b58 = b58 * 256 + ch".
-        for (int j = size - 1; (carry != 0 || i < length) && j != -1; j--, i++) {
-            carry += (b58[j] * 256);
+        for (int j = size - 1; (carry != 0 || i < length) && (j != -1); j--, i++) {
+            carry += 256* b58[j];
             b58[j] = carry % 58;
             carry /= 58;
         }
@@ -62,11 +62,12 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result) {
         j++;
     // Translate the result into a string.
     int i = 0;
-    while (i != size)
+    while (i < zeroes)
+        result[i++] = '1';
+    while (j != size)
         result[i++] = BASE_58_ALPHABET[b58[j++]];
     result[i] = '\0';
 }
-
 void to_address(const unsigned char *public_key_compressed, char *result) {
     /*
      * Address format 1+20=21 bytes:
