@@ -5,14 +5,14 @@ dongle = getDongle(True)
 
 bip44_path = ( # example of bip44 path
     "8000002C"      # purpose
-    + "80000000"    # coin_type
+    + "80000000"    # coin_type (e.g. "80000378")
     + "80000000"    # account
-    + "80000000"    # change
-    + "80000000"    # address_index
+    + "00000000"    # change
+    + "00000000"    # address_index
 )
 
 def send_to_ledger_with_bip44(ins, p1=0x0, p2=0x0, le=0x0):
-    return send_to_ledger(ins, p1, p2, bip44_path, le)
+    return send_to_ledger(ins, p1, p2,  bip44_path, le)
 
 def send_to_ledger(ins, p1=0x0, p2=0x0, data="", le=0x0):
     req = '80' # CLA

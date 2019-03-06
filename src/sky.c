@@ -41,14 +41,14 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     for (int i = 0; i < 35; i++) {
         b58[i] = 0;
     }
-    int size = len * 138 / 100 + 1;
+    int size = (pend - pbegin) * 138 / 100 + 1;
     // Found all remainders
     while (pbegin != pend) {
         int carry = *pbegin;
         int i = 0;
         // Apply "b58 = b58 * 256 + ch".
-        for (int j = size - 1; (carry != 0 || i < length) && j != -1; j--, i++) {
-            carry += (b58[j] * 256);
+        for (int j = size - 1; (carry != 0 || i < length) && (j != -1); j--, i++) {
+            carry += 256* b58[j];
             b58[j] = carry % 58;
             carry /= 58;
         }
@@ -62,7 +62,9 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result) {
         j++;
     // Translate the result into a string.
     int i = 0;
-    while (i != size)
+    while (i < zeroes)
+        result[i++] = '1';
+    while (j != size)
         result[i++] = BASE_58_ALPHABET[b58[j++]];
     result[i] = '\0';
 }
@@ -128,13 +130,12 @@ void derive_keypair(unsigned int bip44_path[], cx_ecfp_private_key_t *private_ke
     unsigned char private_key_data[32];
     cx_ecfp_private_key_t pk;
 
-    os_perso_derive_node_bip32(CX_CURVE_256K1, bip44_path, BIP44_PATH_LEN, private_key_data,
-                               NULL);
-    cx_ecdsa_init_private_key(CX_CURVE_256K1, private_key_data, 32, &pk);
+    os_perso_derive_node_bip32(CX_CURVE_256K1, bip44_path, BIP44_PATH_LEN, private_key_data, NULL);
+    cx_ecfp_init_private_key(CX_CURVE_256K1, private_key_data, 32, &pk);
 
     if (public_key) {
         // generate the public key.
-        cx_ecdsa_init_public_key(CX_CURVE_256K1, NULL, 0, public_key);
+        cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, public_key);
         cx_ecfp_generate_pair(CX_CURVE_256K1, public_key, &pk, 1);
     }
 
