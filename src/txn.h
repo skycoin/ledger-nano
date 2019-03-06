@@ -1,8 +1,8 @@
 #ifndef LEDGER_NANO_TXN_H
 #define LEDGER_NANO_TXN_H
 
-#define MAX_INPUTS 10
-#define MAX_OUTPUTS 10
+#define MAX_INPUTS 16
+#define MAX_OUTPUTS 8
 
 typedef struct {
     unsigned char address[21];

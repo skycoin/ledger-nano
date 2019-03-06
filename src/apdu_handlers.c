@@ -146,21 +146,21 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 break;
             }
             case TXN_START_IN: {
-                // 4 bytes are number of inputs
-                if (ctx->offset != 0) {
-                    ctx->txn_state = TXN_ERROR;
-                } else if (dataLength < 4) {
+                if (dataLength < 4) {
                     os_memmove(ctx->buffer, dataBuffer, dataLength);
                     ctx->offset = dataLength;
                 } else {
-                    ctx->txn.in_num = U4LE(dataBuffer, 0);
-                    ctx->curr_obj = 0;
+                    os_memmove(ctx->buffer + ctx->offset, dataBuffer, 4 - ctx->offset);
+                    dataBuffer += 4 - ctx->offset;
+                    dataLength -= 4 - ctx->offset;
+                    ctx->offset = 0;
 
-                    dataBuffer += 4;
-                    dataLength -= 4;
+                    ctx->txn.in_num = U4LE(ctx->buffer, 0);
+                    ctx->curr_obj = 0;
 
                     ctx->txn_state = TXN_IN;
                     if (ctx->txn.in_num != ctx->txn.sig_num) {
+                        screen_printf("%u %u\n", ctx->txn.in_num, ctx->txn.sig_num);
                         ctx->txn_state = TXN_ERROR;
                     }
                 }
@@ -189,20 +189,19 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 break;
             }
             case TXN_START_OUT: {
-                // 4 bytes are number of outputs
-                if (ctx->offset != 0) {
-                    ctx->txn_state = TXN_ERROR;
-                } else if (dataLength < 4) {
+                if (dataLength < 4) {
                     os_memmove(ctx->buffer, dataBuffer, dataLength);
                     ctx->offset = dataLength;
                     dataBuffer += dataLength;
                     dataLength = 0;
                 } else {
-                    ctx->txn.out_num = U4LE(dataBuffer, 0);
-                    ctx->curr_obj = 0;
+                    os_memmove(ctx->buffer + ctx->offset, dataBuffer, 4 - ctx->offset);
+                    dataBuffer += 4 - ctx->offset;
+                    dataLength -= 4 - ctx->offset;
+                    ctx->offset = 0;
 
-                    dataBuffer += 4;
-                    dataLength -= 4;
+                    ctx->txn.out_num = U4LE(ctx->buffer, 0);
+                    ctx->curr_obj = 0;
 
                     ctx->txn_state = TXN_OUT;
                 }
@@ -240,27 +239,28 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 break;
             }
             case TXN_ERROR: {
-                screen_printf("Some problem in transaction happened");
+                screen_printf("Some problem in transaction happened\n");
                 THROW(0x6B00);
                 break;
             }
         }
-        if(ctx->txn_state == TXN_READY) {
+        if (ctx->txn_state == TXN_READY) {
             ctx->initialized = false;
             break;
         }
     }
+
     if (!ctx->initialized) {
         // If ctx is not initialized, than we read our txn fully
         screen_printf("Len of txn: %u\n", ctx->txn.len);
         screen_printf("Type of txn: %c\n", ctx->txn.type);
         PRINTF("Inner hash %.*h\n", 32, ctx->txn.inner_hash);
         screen_printf("\nNumber of sigs %u\n", ctx->txn.sig_num);
-        for(unsigned int i = 0; i < ctx->txn.in_num; i++) {
+        for (unsigned int i = 0; i < ctx->txn.sig_num; i++) {
             PRINTF("    Signature %.*h\n", 65, ctx->txn.sigs[i]);
         }
         screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
-        for(unsigned int i = 0; i < ctx->txn.in_num; i++) {
+        for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
             PRINTF("    Input %.*h\n", 32, ctx->txn.inputs[i]);
         }
         screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
@@ -273,6 +273,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
             screen_printf("    Number of hours %u\n\n", (unsigned long int) cur_out->hour_num);
         }
     }
+    screen_printf("\n\n\n");
 
     THROW(INS_RET_SUCCESS);
 }
