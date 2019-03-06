@@ -71,7 +71,7 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     screen_printf("Address: %s\n", global.getPublicKeyContext.address);
 
     // push the address onto the response buffer.
-    os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, 35);
+    os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, strlen(global.getPublicKeyContext.address));
     *tx += 35;
 
     THROW(INS_RET_SUCCESS);
