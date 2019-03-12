@@ -16,21 +16,23 @@ extern uint8_t ux_loop_over_curr_element; // only for Nano S
 
 typedef struct {
     char address[36]; // set default value for address
-	char address_copy[40]; // copy of address to be then displayed as scrolling text (for UI needs only)
+    char address_copy[40]; // copy of address to be then displayed as scrolling text (for UI needs only)
 } getPublicKeyContext_t;
 
 typedef struct {
-	bool initialized;
-	txn_state_t txn_state;
-	txn_t txn;
-	unsigned char buffer[65];
-	unsigned char offset;
-	unsigned char curr_obj;
+    bool initialized;
+    cx_sha256_t hash;
+    txn_state_t txn_state;
+    txn_t txn;
+
+    unsigned char buffer[65];
+    unsigned char offset;
+    unsigned char curr_obj;
 } signTxnContext_t;
 
 typedef struct {
-	getPublicKeyContext_t getPublicKeyContext;
-	signTxnContext_t signTxnContext;
+    getPublicKeyContext_t getPublicKeyContext;
+    signTxnContext_t signTxnContext;
 } commandContext;
 
 extern commandContext global;

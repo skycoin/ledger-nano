@@ -1,7 +1,7 @@
 #ifndef LEDGER_NANO_TXN_H
 #define LEDGER_NANO_TXN_H
 
-#define MAX_INPUTS 16
+#define MAX_INPUTS 10
 #define MAX_OUTPUTS 8
 
 typedef struct {
@@ -17,8 +17,10 @@ typedef struct {
 
     unsigned int sig_num;
     unsigned char sigs[MAX_INPUTS][65];
+
     unsigned int in_num;
     unsigned char inputs[MAX_INPUTS][32];
+
     unsigned int out_num;
     txn_output_t outputs[MAX_OUTPUTS];
 } txn_t;
