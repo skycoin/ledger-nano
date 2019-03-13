@@ -130,16 +130,81 @@ void derive_keypair(unsigned int bip44_path[], cx_ecfp_private_key_t *private_ke
 	os_memset(&pk, 0, sizeof(pk));
 }
 
+void compress_public_key(const unsigned char *public_key, unsigned char *dst){
+    // check parity and add appropriate prefix
+    dst[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
+    os_memmove(dst + 1, public_key + 1, 32);
+}
+
 void generate_address(const unsigned char *public_key, unsigned char *dst) {
     // convert public key from uncompressed to compressed
     unsigned char public_key_compressed[33];
-
-    // check parity and add appropriate prefix
-    public_key_compressed[0] = ((public_key[64] & 1) ? 0x03 : 0x02);
-    os_memmove(public_key_compressed + 1, public_key, 32);
+    compress_public_key(public_key, public_key_compressed);
 
     unsigned char address_base58[ADDRESS_BASE58_LEN];
     to_address(public_key_compressed, address_base58);
 
     os_memmove(dst, address_base58, ADDRESS_BASE58_LEN);
+}
+
+
+void convert_signature_from_TLV_to_RS(const unsigned char * tlv_signature, unsigned char *dst) {
+    /**
+     * Ledger SKD(e.g. function `cx_ecdsa_sign`) return a signature in the TLV format,
+     * but Skycoin works with simple (R|S + recovery byte) format
+     * This function convert TLV to skycoin format 
+     * 
+     * TLV specification: 
+     *   Short:
+     *      type | length | x02 identifier of integer | R length | R value (32-33 bytes) | x02 identifier of integer | S length | S value (32-33 bytes)
+     *   Details:
+     *      1-byte type 0x30 "Compound object" (the tuple of (R,S) values)
+     *      1-byte length of the compound object
+     *      The signature's R value, consisting of:
+     *      1-byte type 0x02 "Integer"
+     *      1-byte length of the integer
+     *      variable-length R value's bytes
+     *      The signature's S value, consisting of:
+     *      1-byte type 0x02 "Integer"
+     *      1-byte length of the integer
+     *      variable-length S value's bytes
+     *      The sighash type byte
+     * 
+     *  @param [in] tlv_signature
+     *    The signature which returns ledger SDK (70-72 bytes length).
+     * 
+     *  @param [out] dst
+     *    The resulting signature which is appropriate with Skycoin cipher API
+     * */
+
+    int r_size = tlv_signature[3];
+    int s_size = tlv_signature[3 + r_size + 2];
+
+    int r_offset = r_size - 32;
+    int s_offset = s_size - 32;
+
+    os_memmove(dst, tlv_signature + 4 + r_offset, 32); // skip first bytes and store the `R` part
+    os_memmove(dst + 32, tlv_signature + 4 + 32 + 2 + r_offset + s_offset, 32); // skip unused bytes and store the `S` part 
+}
+
+
+void sign(cx_ecfp_private_key_t *private_key, const unsigned char *hash, unsigned char *signature){
+    /** create the signature of a hash */
+    unsigned char tle_sign_tx[70];
+
+    unsigned int info = 0;
+    unsigned int recovery_id = 0;
+    int sign_size;
+    
+    sign_size = cx_ecdsa_sign((void*) private_key, CX_RND_RFC6979 | CX_LAST, CX_SHA256, hash, 32, tle_sign_tx, &info);
+
+    if (info & CX_ECCINFO_PARITY_ODD)
+        recovery_id++;
+    
+    if (info & CX_ECCINFO_xGTn)
+        recovery_id += 2;
+
+    convert_signature_from_TLV_to_RS(tle_sign_tx, signature);
+    
+    signature[64] = recovery_id;
 }
