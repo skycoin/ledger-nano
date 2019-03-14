@@ -24,20 +24,20 @@ void handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint1
     get_bip44_path(dataBuffer, bip44_path);
     derive_keypair(bip44_path, &private_key, &public_key);
 
-    unsigned char public_key_compressed[33];
+    unsigned char public_key_compressed[COMPRESSED_PK_LEN];
     compress_public_key(public_key.W, public_key_compressed);
     
-    unsigned char public_key_hash[32];
+    unsigned char public_key_hash[SHA256_HASH_LEN];
     cx_sha256_t pubkey_hasher;
     cx_sha256_init(&pubkey_hasher);
     
-    cx_hash(&pubkey_hasher.header, CX_LAST, public_key.W, 65, public_key_hash);
-    unsigned char signature[65];
+    cx_hash(&pubkey_hasher.header, CX_LAST, public_key.W, PK_LEN, public_key_hash);
+    unsigned char signature[PK_LEN];
 
     sign(&private_key, public_key_hash, signature);
 
-    os_memmove(G_io_apdu_buffer, signature, 65);
-    *tx += 65;
+    os_memmove(G_io_apdu_buffer, signature, PK_LEN);
+    *tx += PK_LEN;
     
     THROW(INS_RET_SUCCESS);
 }
@@ -60,8 +60,8 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     derive_keypair(bip44_path, NULL, &public_key);
 
     // push the public key onto the response buffer.
-    os_memmove(G_io_apdu_buffer, public_key.W, 65);
-    *tx += 65;
+    os_memmove(G_io_apdu_buffer, public_key.W, PK_LEN);
+    *tx += PK_LEN;
 
     THROW(INS_RET_SUCCESS);
 }
@@ -78,7 +78,7 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 
     // push the address onto the response buffer.
     os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, strlen(global.getPublicKeyContext.address));
-    *tx += 35;
+    *tx += strlen(global.getPublicKeyContext.address);
 
     THROW(INS_RET_SUCCESS);
 }
