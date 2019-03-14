@@ -121,7 +121,7 @@ void generate_address(const unsigned char *public_key, unsigned char *dst) {
     unsigned char public_key_compressed[COMPRESSED_PK_LEN];
     compress_public_key(public_key, public_key_compressed);
 
-    to_address(public_key_compressed, address_base58);
+    to_address(public_key_compressed, dst);
 }
 
 
