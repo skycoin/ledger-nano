@@ -178,15 +178,17 @@ void convert_signature_from_TLV_to_RS(const unsigned char *tlv_signature, unsign
      *    The resulting signature which is appropriate with Skycoin cipher API
      * */
 
-    int r_size = tlv_signature[3];
-    int s_size = tlv_signature[3 + r_size + 2];
+    int r_size = tlv_signature[3]; // 3 - index of "R length" byte
+    int s_size = tlv_signature[3 + r_size + 2]; // - index of "S length" byte
 
     int r_offset = r_size - 32;
     int s_offset = s_size - 32;
 
-    os_memmove(dst, tlv_signature + 4 + r_offset, 32); // skip first bytes and store the `R` part
-    os_memmove(dst + 32, tlv_signature + 4 + 32 + 2 + r_offset + s_offset,
-               32); // skip unused bytes and store the `S` part
+    const int offset_before_R = 4; // skip 4 bytes for type|length|x02|R length
+    const int offset_before_S = 2; // skip 4 bytes for type|length|x02|R length
+
+    os_memmove(dst, tlv_signature + offset_before_R + r_offset, 32); // skip first bytes and store the `R` part
+    os_memmove(dst + 32, tlv_signature + offset_before_R + 32 + offset_before_S + r_offset + s_offset, 32); // skip unused bytes and store the `S` part 
 }
 
 

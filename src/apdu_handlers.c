@@ -32,12 +32,12 @@ void handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint1
     cx_sha256_init(&pubkey_hasher);
     
     cx_hash(&pubkey_hasher.header, CX_LAST, public_key.W, PK_LEN, public_key_hash);
-    unsigned char signature[PK_LEN];
+    unsigned char signature[SIG_LEN];
 
     sign(&private_key, public_key_hash, signature);
 
-    os_memmove(G_io_apdu_buffer, signature, PK_LEN);
-    *tx += PK_LEN;
+    os_memmove(G_io_apdu_buffer, signature, SIG_LEN);
+    *tx += SIG_LEN;
     
     THROW(INS_RET_SUCCESS);
 }

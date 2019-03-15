@@ -11,6 +11,8 @@
 #define SHA256_HASH_LEN 32
 /** the length of public key */
 #define PK_LEN 65
+/** the length of a signature */
+#define SIG_LEN 65
 /** the length of a compressed public key */
 #define COMPRESSED_PK_LEN 33
 /** the length of a RIPMD160 hash */
