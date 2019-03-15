@@ -1,9 +1,33 @@
 #include "sky.h"
 
+#define INS_RET_WRONG_DATA 0x6A80
+
 void get_bip44_path(uint8_t *dataBuffer, unsigned int bip44_path[]) {
     for (uint32_t i = 0; i < BIP44_PATH_LEN; i++) {
+        // First bit in purpose, cont_type and account should be 1
+        if (i < 3 && !((dataBuffer[0] >> 7) & 1)) {
+            THROW(INS_RET_WRONG_DATA);
+        }
         bip44_path[i] = U4BE(dataBuffer, 0);
         dataBuffer += 4;
+    }
+    // TODO: Add validation for coin_type, when SkyCoin will get one
+
+    // Purpose should be 44
+    if ((bip44_path[0] & ~(1 << 31)) != 44) {
+        THROW(INS_RET_WRONG_DATA);
+    }
+    // Account(excluding first byte) should be in range [0, 10),
+    if ((bip44_path[2] & ~(1 << 31)) > 9) {
+        THROW(INS_RET_WRONG_DATA);
+    }
+    // Change should be 0 or 1
+    if ((bip44_path[3] & ~1) > 0) {
+        THROW(INS_RET_WRONG_DATA);
+    }
+    // Address_index should be in range [0, 1000)
+    if (bip44_path[4] > 999) {
+        THROW(INS_RET_WRONG_DATA);
     }
 }
 
@@ -187,7 +211,7 @@ void sign(cx_ecfp_private_key_t *private_key, const unsigned char *hash, unsigne
 
     if (info & CX_ECCINFO_PARITY_ODD)
         recovery_id++;
-    
+
     if (info & CX_ECCINFO_xGTn)
         recovery_id += 2;
 
