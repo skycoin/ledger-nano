@@ -109,45 +109,12 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                    volatile unsigned int *tx) {
     if (!ctx->initialized) {
         cx_sha256_init(&ctx->hash);
-        ctx->txn_state = TXN_STARTED;
+        ctx->txn_state = TXN_START_IN;
         ctx->initialized = true;
         ctx->offset = 0;
     }
     while (dataLength || ctx->txn_state == TXN_READY || ctx->txn_state == TXN_ERROR) {
         switch (ctx->txn_state) {
-            case TXN_STARTED: {
-                read_data_to_buffer(&dataBuffer, &dataLength, 37);
-
-                ctx->txn.len = U4LE(ctx->buffer, 0);
-                ctx->txn.type = ctx->buffer[4];
-                os_memmove(ctx->txn.inner_hash, ctx->buffer + 5, 32);
-
-                ctx->txn_state = TXN_START_SIG;
-                break;
-            }
-            case TXN_START_SIG: {
-                read_data_to_buffer(&dataBuffer, &dataLength, 4);
-                ctx->txn.sig_num = U4LE(ctx->buffer, 0);
-
-                ctx->txn_state = TXN_SIG;
-                ctx->curr_obj = 0;
-                break;
-            }
-            case TXN_SIG: {
-                // 65 bytes are signature
-                if (ctx->offset + dataLength < 65) {
-                    save_data_to_buffer(&dataBuffer, &dataLength);
-                } else {
-                    read_data_to_buffer(&dataBuffer, &dataLength, 65);
-
-                    os_memmove(ctx->txn.sigs[ctx->curr_obj], ctx->buffer, 65);
-                    ctx->curr_obj += 1;
-                }
-                if (ctx->curr_obj == ctx->txn.sig_num) {
-                    ctx->txn_state = TXN_START_IN;
-                }
-                break;
-            }
             case TXN_START_IN: {
                 if (ctx->offset + dataLength < 4) {
                     save_data_to_buffer(&dataBuffer, &dataLength);
@@ -159,11 +126,6 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
 
                     ctx->txn_state = TXN_IN;
                     ctx->curr_obj = 0;
-                    if (ctx->txn.in_num != ctx->txn.sig_num) {
-                        screen_printf("Number of inputs and signatures is not equal\n%u %u\n", ctx->txn.in_num,
-                                      ctx->txn.sig_num);
-                        ctx->txn_state = TXN_ERROR;
-                    }
                 }
                 break;
             }
@@ -175,7 +137,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     read_data_to_buffer(&dataBuffer, &dataLength, 32);
 
                     cx_hash(&ctx->hash.header, 0, ctx->buffer, 32, NULL);
-                    os_memmove(ctx->txn.inputs[ctx->curr_obj], ctx->buffer, 32);
+                    os_memmove(ctx->txn.sig_input[ctx->curr_obj].input, ctx->buffer, 32);
                     ctx->curr_obj += 1;
                 }
                 if (ctx->curr_obj == ctx->txn.in_num) {
@@ -213,16 +175,8 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     ctx->curr_obj += 1;
 
                     if (ctx->curr_obj == ctx->txn.out_num) {
-                        uint8_t real_inner_hash[32];
-
-                        cx_hash(&ctx->hash.header, CX_LAST, ctx->buffer, 37, real_inner_hash);
-                        PRINTF("INNER HASH %.*h\n", 32, real_inner_hash);
-
-                        if (mem_equal(real_inner_hash, ctx->txn.inner_hash, 32)) {
-                            ctx->txn_state = TXN_READY;
-                        } else {
-                            ctx->txn_state = TXN_ERROR;
-                        }
+                        cx_hash(&ctx->hash.header, CX_LAST, ctx->buffer, 37, ctx->txn.inner_hash);
+                        ctx->txn_state = TXN_READY;
                     } else {
                         cx_hash(&ctx->hash.header, 0, ctx->buffer, 37, NULL);
                     }
@@ -232,16 +186,10 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
             case TXN_READY: {
                 screen_printf("Transaction is valid\n");
 
-                screen_printf("Len of txn: %u\n", ctx->txn.len);
-                screen_printf("Type of txn: %c\n", ctx->txn.type);
                 PRINTF("Inner hash %.*h\n", 32, ctx->txn.inner_hash);
-                screen_printf("\nNumber of sigs %u\n", ctx->txn.sig_num);
-                for (unsigned int i = 0; i < ctx->txn.sig_num; i++) {
-                    PRINTF("    Signature %.*h\n", 65, ctx->txn.sigs[i]);
-                }
                 screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
                 for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
-                    PRINTF("    Input %.*h\n", 32, ctx->txn.inputs[i]);
+                    PRINTF("    Input %.*h\n", 32, ctx->txn.sig_input[i].input);
                 }
                 screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
                 for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
@@ -252,7 +200,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     screen_printf("    Number of coins %u\n", (unsigned long int) cur_out->coin_num);
                     screen_printf("    Number of hours %u\n\n", (unsigned long int) cur_out->hour_num);
                 }
-                screen_printf("\n\n\n");
+                screen_printf("\n\n");
 
                 ctx->initialized = false;
                 THROW(INS_RET_SUCCESS);

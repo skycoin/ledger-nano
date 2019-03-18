@@ -25,7 +25,7 @@ typedef struct {
     txn_state_t txn_state;
     txn_t txn;
 
-    unsigned char buffer[65];
+    unsigned char buffer[37];
     unsigned char offset;
     unsigned char curr_obj;
 } signTxnContext_t;

@@ -10,25 +10,21 @@ typedef struct {
     uint64_t hour_num;
 } txn_output_t;
 
+typedef union {
+    unsigned char input[32];
+    unsigned char signature[65];
+} sig_input_t;
+
 typedef struct {
-    unsigned int len;
-    unsigned char type;
     uint8_t inner_hash[32];
-
-    unsigned int sig_num;
-    unsigned char sigs[MAX_INPUTS][65];
-
     unsigned int in_num;
-    unsigned char inputs[MAX_INPUTS][32];
+    sig_input_t sig_input[MAX_INPUTS];
 
     unsigned int out_num;
     txn_output_t outputs[MAX_OUTPUTS];
 } txn_t;
 
 typedef enum {
-    TXN_STARTED,
-    TXN_START_SIG,
-    TXN_SIG,
     TXN_START_IN,
     TXN_IN,
     TXN_START_OUT,
