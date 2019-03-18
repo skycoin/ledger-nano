@@ -29,7 +29,7 @@
 static const char BASE_58_ALPHABET[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 /** get bip44 address from data buffer */
-void get_bip44_path(uint8_t *dataBuffer, unsigned int bip44_path[]);
+void get_bip44_path(uint8_t *dataBuffer);
 
 /** encode number in base58 format */
 int encode_base_58(const unsigned char *pbegin, int len, char *result);

@@ -15,6 +15,7 @@ extern unsigned int ux_step_count;
 extern uint8_t ux_loop_over_curr_element; // only for Nano S
 
 typedef struct {
+    unsigned int bip44_path[BIP44_PATH_LEN];
     char address[36]; // set default value for address
     char address_copy[40]; // copy of address to be then displayed as scrolling text (for UI needs only)
 } getPublicKeyContext_t;

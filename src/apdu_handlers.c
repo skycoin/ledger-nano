@@ -32,18 +32,17 @@ handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t d
                          volatile unsigned int *tx) {
     cx_ecfp_public_key_t public_key;
     cx_ecfp_private_key_t private_key;
-    unsigned int bip44_path[BIP44_PATH_LEN];
 
-    get_bip44_path(dataBuffer, bip44_path);
-    derive_keypair(bip44_path, &private_key, &public_key);
+    get_bip44_path(dataBuffer);
+    derive_keypair(global.getPublicKeyContext.bip44_path, &private_key, &public_key);
 
     unsigned char public_key_compressed[COMPRESSED_PK_LEN];
     compress_public_key(public_key.W, public_key_compressed);
-    
+
     unsigned char public_key_hash[SHA256_HASH_LEN];
     cx_sha256_t pubkey_hasher;
     cx_sha256_init(&pubkey_hasher);
-    
+
     cx_hash(&pubkey_hasher.header, CX_LAST, public_key.W, PK_LEN, public_key_hash);
     unsigned char signature[SIG_LEN];
 
@@ -51,7 +50,7 @@ handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t d
 
     os_memmove(G_io_apdu_buffer, signature, SIG_LEN);
     *tx += SIG_LEN;
-    
+
     THROW(INS_RET_SUCCESS);
 }
 
@@ -67,10 +66,10 @@ void handleGetVersion(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                         volatile unsigned int *tx) {
     cx_ecfp_public_key_t public_key;
-    unsigned int bip44_path[BIP44_PATH_LEN];
+//    unsigned int bip44_path[BIP44_PATH_LEN];
 
-    get_bip44_path(dataBuffer, bip44_path);
-    derive_keypair(bip44_path, NULL, &public_key);
+    get_bip44_path(dataBuffer);
+    derive_keypair(global.getPublicKeyContext.bip44_path, NULL, &public_key);
 
     // push the public key onto the response buffer.
     os_memmove(G_io_apdu_buffer, public_key.W, PK_LEN);
@@ -82,10 +81,9 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                       volatile unsigned int *tx) {
     cx_ecfp_public_key_t public_key;
-    unsigned int bip44_path[BIP44_PATH_LEN];
 
-    get_bip44_path(dataBuffer, bip44_path);
-    derive_keypair(bip44_path, NULL, &public_key);
+    get_bip44_path(dataBuffer);
+    derive_keypair(global.getPublicKeyContext.bip44_path, NULL, &public_key);
 
     generate_address(public_key.W, global.getPublicKeyContext.address);
 
@@ -194,14 +192,29 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 PRINTF("Inner hash %.*h\n", 32, ctx->txn.inner_hash);
                 screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
                 for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
+                    PRINTF("    Input %.*h\n", 32, ctx->txn.sig_input[i].input);
+
                     static cx_sha256_t hash;
                     unsigned char sig_hash[32];
+                    cx_ecfp_private_key_t private_key;
+
+                    screen_printf("Bip44 path: ");
+                    for (int i = 0; i < BIP44_PATH_LEN; i++) {
+                        screen_printf("%x ", global.getPublicKeyContext.bip44_path[i]);
+                    }
+                    screen_printf("\n");
 
                     cx_sha256_init(&hash);
                     cx_hash(&hash.header, 0, ctx->txn.inner_hash, 32, NULL);
                     cx_hash(&hash.header, CX_LAST, ctx->txn.sig_input[i].input, 32, sig_hash);
 
-                    PRINTF("    Input %.*h\n", 32, ctx->txn.sig_input[i].input);
+                    derive_keypair(global.getPublicKeyContext.bip44_path, &private_key, NULL);
+
+                    unsigned char signature[SIG_LEN];
+
+                    sign(&private_key, sig_hash, ctx->txn.sig_input[i].signature);
+
+                    PRINTF("    Signature %.*h\n\n", 65, ctx->txn.sig_input[i].signature);
                 }
                 screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
                 for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
