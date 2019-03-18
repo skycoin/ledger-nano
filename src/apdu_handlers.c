@@ -189,6 +189,13 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 PRINTF("Inner hash %.*h\n", 32, ctx->txn.inner_hash);
                 screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
                 for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
+                    static cx_sha256_t hash;
+                    unsigned char sig_hash[32];
+
+                    cx_sha256_init(&hash);
+                    cx_hash(&hash.header, 0, ctx->txn.inner_hash, 32, NULL);
+                    cx_hash(&hash.header, CX_LAST, ctx->txn.sig_input[i].input, 32, sig_hash);
+
                     PRINTF("    Input %.*h\n", 32, ctx->txn.sig_input[i].input);
                 }
                 screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
