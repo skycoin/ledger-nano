@@ -37,14 +37,21 @@ handleGetSignedPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t d
     get_bip44_path(dataBuffer, bip44_path);
     derive_keypair(bip44_path, &private_key, &public_key);
 
-    unsigned char result[32];
-    cx_sha256_t pubKeyHash;
-    cx_sha256_init(&pubKeyHash);
+    unsigned char public_key_compressed[COMPRESSED_PK_LEN];
+    compress_public_key(public_key.W, public_key_compressed);
+    
+    unsigned char public_key_hash[SHA256_HASH_LEN];
+    cx_sha256_t pubkey_hasher;
+    cx_sha256_init(&pubkey_hasher);
+    
+    cx_hash(&pubkey_hasher.header, CX_LAST, public_key.W, PK_LEN, public_key_hash);
+    unsigned char signature[SIG_LEN];
 
-    cx_hash(&pubKeyHash.header, CX_LAST, public_key.W, 65, result);
-    *tx += cx_ecdsa_sign((void *) &private_key, CX_RND_RFC6979 | CX_LAST, CX_SHA256, result, sizeof(result),
-                         G_io_apdu_buffer + *tx, NULL);
+    sign(&private_key, public_key_hash, signature);
 
+    os_memmove(G_io_apdu_buffer, signature, SIG_LEN);
+    *tx += SIG_LEN;
+    
     THROW(INS_RET_SUCCESS);
 }
 
@@ -66,8 +73,8 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     derive_keypair(bip44_path, NULL, &public_key);
 
     // push the public key onto the response buffer.
-    os_memmove(G_io_apdu_buffer, public_key.W, 65);
-    *tx += 65;
+    os_memmove(G_io_apdu_buffer, public_key.W, PK_LEN);
+    *tx += PK_LEN;
 
     THROW(INS_RET_SUCCESS);
 }
@@ -81,12 +88,10 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     derive_keypair(bip44_path, NULL, &public_key);
 
     generate_address(public_key.W, global.getPublicKeyContext.address);
-    screen_printf("Public key: %s\n", public_key.W);
-    screen_printf("Address: %s\n", global.getPublicKeyContext.address);
 
     // push the address onto the response buffer.
-    os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, 35);
-    *tx += 35;
+    os_memmove(G_io_apdu_buffer, global.getPublicKeyContext.address, strlen(global.getPublicKeyContext.address));
+    *tx += strlen(global.getPublicKeyContext.address);
 
     THROW(INS_RET_SUCCESS);
 }
