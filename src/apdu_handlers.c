@@ -189,13 +189,15 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
             case TXN_READY: {
                 screen_printf("Transaction is valid\n");
 
-                PRINTF("Inner hash %.*h\n", 32, ctx->txn.inner_hash);
+                PRINTF("Inner hash %.*h\n", SHA256_HASH_LEN, ctx->txn.inner_hash);
+                os_memmove(G_io_apdu_buffer, ctx->txn.inner_hash, SHA256_HASH_LEN);
+                *tx += SHA256_HASH_LEN;
                 screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
                 for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
-                    PRINTF("    Input %.*h\n", 32, ctx->txn.sig_input[i].input);
+                    PRINTF("    Input %.*h\n", SHA256_HASH_LEN, ctx->txn.sig_input[i].input);
 
                     static cx_sha256_t hash;
-                    unsigned char sig_hash[32];
+                    unsigned char sig_hash[SHA256_HASH_LEN];
                     cx_ecfp_private_key_t private_key;
 
                     screen_printf("Bip44 path: ");
@@ -205,8 +207,8 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     screen_printf("\n");
 
                     cx_sha256_init(&hash);
-                    cx_hash(&hash.header, 0, ctx->txn.inner_hash, 32, NULL);
-                    cx_hash(&hash.header, CX_LAST, ctx->txn.sig_input[i].input, 32, sig_hash);
+                    cx_hash(&hash.header, 0, ctx->txn.inner_hash, SHA256_HASH_LEN, NULL);
+                    cx_hash(&hash.header, CX_LAST, ctx->txn.sig_input[i].input, SHA256_HASH_LEN, sig_hash);
 
                     derive_keypair(global.getPublicKeyContext.bip44_path, &private_key, NULL);
 
@@ -214,7 +216,9 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
 
                     sign(&private_key, sig_hash, ctx->txn.sig_input[i].signature);
 
-                    PRINTF("    Signature %.*h\n\n", 65, ctx->txn.sig_input[i].signature);
+                    PRINTF("    Signature %.*h\n\n", SIG_LEN, ctx->txn.sig_input[i].signature);
+                    os_memmove(G_io_apdu_buffer + *tx, ctx->txn.sig_input[i].signature, SIG_LEN);
+                    *tx += SIG_LEN;
                 }
                 screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
                 for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
