@@ -13,3 +13,7 @@ obj/
 
 # Automatically generated files
 src/glyphs.*
+
+# Python generated files
+__pycache__
+*.pyc
