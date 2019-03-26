@@ -10,7 +10,7 @@
 // UI struct for screen with address(derived from pk)
 static const bagl_element_t bagl_ui_address[] = {
     UI_BACKGROUND(),
-    UI_TEXT(0x83, 16, 20, 100, global.getPublicKeyContext.address_copy),
+    UI_TEXT(0x83, 21, 20, 95, global.getPublicKeyContext.address_copy),
     UI_ICON_LEFT(0x00, BAGL_GLYPH_ICON_CROSS)
 };
 
@@ -42,10 +42,12 @@ unsigned int ui_address_scrolling_text_prepro(const bagl_element_t *element) {
 
         current_offset += direction;
 
-        if(current_offset == 0 || (current_offset + SCREEN_MAX_CHARS == 40))
+        if(current_offset == 0 || (current_offset + SCREEN_MAX_CHARS == 36)){
             direction *= -1;
+            UX_CALLBACK_SET_INTERVAL(1200); // wait more if we change direction
+        } else
+            UX_CALLBACK_SET_INTERVAL(300);
 
-        UX_CALLBACK_SET_INTERVAL(300);
     }
 
     return 1;
@@ -53,7 +55,7 @@ unsigned int ui_address_scrolling_text_prepro(const bagl_element_t *element) {
 
 void go_to_address_screen(unsigned int userid){
     // initialize variables for updating the UI each interval 
-    ux_step = 0; ux_step_count = 4;
+    ux_step = 1; ux_step_count = 4;
     // Initialize variables for working with scrolling text
     current_offset = 0; direction = 1;
         

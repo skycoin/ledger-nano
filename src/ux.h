@@ -9,6 +9,8 @@
 #define BIP44_PATH_LEN 5 // length of BIP44 path
 #define BIP44_BYTE_LENGTH (BIP44_PATH_LEN * sizeof(unsigned int)) // length of BIP44 path, in bytes
 
+#define SCREEN_MAX_CHARS 16 // Maximum number of characters to be displayed on screen(for scrolling text only) 
+
 // display stepped screens
 extern unsigned int ux_step;
 extern unsigned int ux_step_count;
