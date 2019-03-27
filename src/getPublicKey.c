@@ -25,13 +25,6 @@ static unsigned int bagl_ui_address_button(unsigned int button_mask, unsigned in
 	return 0;
 }
 
-// Helper function to be used later for scrolling text 
-void swap_str_elems(void* str, int from, int to){
-    char tmp = ((char *) str)[from];
-    ((char *) str)[to] = ((char *) str)[from];
-    ((char *) str)[from] = tmp;
-}
-
 // Preprocessor for address screen
 // Each iteration it "moves" the text of `address` so it looks like scrolling-text
 int current_offset, direction;
@@ -41,12 +34,15 @@ unsigned int ui_address_scrolling_text_prepro(const bagl_element_t *element) {
         ((char *) element->text) [SCREEN_MAX_CHARS] = '\0';        
 
         current_offset += direction;
-
-        if(current_offset == 0 || (current_offset + SCREEN_MAX_CHARS == 36)){
+        // firstly we update current_offset, then wait and after that copy and change the string 
+        // so check equality with -1, but not with 0
+        // the same with (current_offset + SCREEN_MAX_CHARS) and strlen
+        if(current_offset == -1 || (current_offset + SCREEN_MAX_CHARS == (strlen(global.getPublicKeyContext.address) + 1))){  
             direction *= -1;
-            UX_CALLBACK_SET_INTERVAL(1200); // wait more if we change direction
-        } else
-            UX_CALLBACK_SET_INTERVAL(300);
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY); // wait more if we change direction
+        } else {
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+        }
 
     }
 
@@ -55,7 +51,7 @@ unsigned int ui_address_scrolling_text_prepro(const bagl_element_t *element) {
 
 void go_to_address_screen(unsigned int userid){
     // initialize variables for updating the UI each interval 
-    ux_step = 1; ux_step_count = 4;
+    ux_step = 0; ux_step_count = 4;
     // Initialize variables for working with scrolling text
     current_offset = 0; direction = 1;
         

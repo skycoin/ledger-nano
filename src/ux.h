@@ -10,6 +10,8 @@
 #define BIP44_BYTE_LENGTH (BIP44_PATH_LEN * sizeof(unsigned int)) // length of BIP44 path, in bytes
 
 #define SCREEN_MAX_CHARS 16 // Maximum number of characters to be displayed on screen(for scrolling text only) 
+#define SCROLLING_TEXT_DELAY 300 // Delay for scrolling text, before the next iteration(movement) will be done (in milliseconds) 
+#define SCROLLING_TEXT_BIG_DELAY 1200 //  Big delay (e.g. for a longer stop in the beginning and in the end)
 
 // display stepped screens
 extern unsigned int ux_step;
@@ -19,7 +21,7 @@ extern uint8_t ux_loop_over_curr_element; // only for Nano S
 typedef struct {
     unsigned int bip44_path[BIP44_PATH_LEN];
     char address[36]; // set default value for address
-    char address_copy[40]; // copy of address to be then displayed as scrolling text (for UI needs only)
+	char address_copy[SCREEN_MAX_CHARS]; // copy of address to be then displayed as scrolling text (for UI needs only)
 } getPublicKeyContext_t;
 
 typedef struct {
