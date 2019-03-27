@@ -1,4 +1,5 @@
 from adpu_call import send_to_ledger
+from struct import unpack
 import binascii
 
 # command to generate txn
@@ -15,9 +16,15 @@ def send_txn(txn):
     # Packets can be max at 255 size = dongle.apduMaxDataSize()
     i = 0
     while i*2*254 < len(txn):
-        txn = send_to_ledger(ins=0x10,p1=0x0, data=txn[i*254*2:(i+1)*254*2])
+        ret = send_to_ledger(ins=0x10,p1=0x0, data=txn[i*254*2:(i+1)*254*2])
         i += 1
-    txn = binascii.hexlify(txn)
+    ret =binascii.hexlify(ret)
+    while len(ret)//2 < 32 + unpack("<L", binascii.a2b_hex(txn[:8]))[0]*65:
+        ret = ret + binascii.hexlify(send_to_ledger(ins=0x10, p1=0x0, data=""))
+    print 2*len(ret)
+    print unpack("<L", binascii.a2b_hex(txn[:8]))[0]*65 + 32
+    # txn = binascii.hexlify(ret)
+    txn = ret
     inner_hash = txn[:32*2]
     txn = txn[32*2:]
     sigs = []

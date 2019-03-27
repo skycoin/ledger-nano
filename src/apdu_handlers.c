@@ -116,9 +116,10 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
         ctx->initialized = true;
         ctx->offset = 0;
     }
-    while (dataLength || ctx->txn_state == TXN_READY || ctx->txn_state == TXN_ERROR) {
+    while (dataLength || ctx->txn_state == TXN_READY || ctx->txn_state == TXN_ERROR || ctx->txn_state == TXN_RET_SIGS) {
         switch (ctx->txn_state) {
             case TXN_START_IN: {
+//                screen_printf("START_IN\n");
                 if (ctx->offset + dataLength < 4) {
                     save_data_to_buffer(&dataBuffer, &dataLength);
                 } else {
@@ -134,13 +135,14 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
             }
             case TXN_IN: {
                 // 32 bytes are input
-                if (ctx->offset + dataLength < 32) {
+                if (ctx->offset + dataLength < 36) {
                     save_data_to_buffer(&dataBuffer, &dataLength);
                 } else {
-                    read_data_to_buffer(&dataBuffer, &dataLength, 32);
+//                    screen_printf("IN\n");
+                    read_data_to_buffer(&dataBuffer, &dataLength, 36);
 
                     cx_hash(&ctx->hash.header, 0, ctx->buffer, 32, NULL);
-                    os_memmove(ctx->txn.sig_input[ctx->curr_obj].input, ctx->buffer, 32);
+                    os_memmove(ctx->txn.sig_input[ctx->curr_obj].input, ctx->buffer, 36);
                     ctx->curr_obj += 1;
                 }
                 if (ctx->curr_obj == ctx->txn.in_num) {
@@ -152,6 +154,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 if (dataLength < 4) {
                     save_data_to_buffer(&dataBuffer, &dataLength);
                 } else {
+//                    screen_printf("START_OUT\n");
                     read_data_to_buffer(&dataBuffer, &dataLength, 4);
 
                     cx_hash(&ctx->hash.header, 0, ctx->buffer, 4, NULL);
@@ -167,6 +170,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 if (ctx->offset + dataLength < 37) {
                     save_data_to_buffer(&dataBuffer, &dataLength);
                 } else {
+//                    screen_printf("OUT\n");
                     read_data_to_buffer(&dataBuffer, &dataLength, 37);
 
                     txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj];
@@ -177,6 +181,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
 
                     ctx->curr_obj += 1;
 
+//                    screen_printf("Cur object %d %d\n", ctx->curr_obj, dataLength);
                     if (ctx->curr_obj == ctx->txn.out_num) {
                         cx_hash(&ctx->hash.header, CX_LAST, ctx->buffer, 37, ctx->txn.inner_hash);
                         ctx->txn_state = TXN_READY;
@@ -194,43 +199,56 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 *tx += SHA256_HASH_LEN;
                 screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
                 for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
-                    PRINTF("    Input %.*h\n", SHA256_HASH_LEN, ctx->txn.sig_input[i].input);
+//                    PRINTF("    Input %.*h\n", SHA256_HASH_LEN, ctx->txn.sig_input[i].input);
 
                     static cx_sha256_t hash;
                     unsigned char sig_hash[SHA256_HASH_LEN];
                     cx_ecfp_private_key_t private_key;
 
-                    screen_printf("Bip44 path: ");
-                    for (int i = 0; i < BIP44_PATH_LEN; i++) {
-                        screen_printf("%x ", global.getPublicKeyContext.bip44_path[i]);
-                    }
-                    screen_printf("\n");
-
                     cx_sha256_init(&hash);
                     cx_hash(&hash.header, 0, ctx->txn.inner_hash, SHA256_HASH_LEN, NULL);
                     cx_hash(&hash.header, CX_LAST, ctx->txn.sig_input[i].input, SHA256_HASH_LEN, sig_hash);
 
+                    unsigned int new_bip44 = U4LE(ctx->txn.sig_input[i].input, 32);
+                    unsigned int old_bip44 = global.getPublicKeyContext.bip44_path[4];
+                    global.getPublicKeyContext.bip44_path[4] = new_bip44;
                     derive_keypair(global.getPublicKeyContext.bip44_path, &private_key, NULL);
+                    global.getPublicKeyContext.bip44_path[4] = old_bip44;
 
                     unsigned char signature[SIG_LEN];
 
                     sign(&private_key, sig_hash, ctx->txn.sig_input[i].signature);
 
-                    PRINTF("    Signature %.*h\n\n", SIG_LEN, ctx->txn.sig_input[i].signature);
-                    os_memmove(G_io_apdu_buffer + *tx, ctx->txn.sig_input[i].signature, SIG_LEN);
-                    *tx += SIG_LEN;
+//                    PRINTF("    Signature %.*h\n\n", SIG_LEN, ctx->txn.sig_input[i].signature);
                 }
                 screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
-                for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
-                    char address[36];
-                    txn_output_t *cur_out = &ctx->txn.outputs[i];
-                    address_to_base58(cur_out->address, address);
-                    screen_printf("    Output address %s\n", address);
-                    screen_printf("    Number of coins %u\n", (unsigned long int) cur_out->coin_num);
-                    screen_printf("    Number of hours %u\n\n", (unsigned long int) cur_out->hour_num);
+//                for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
+//                    char address[36];
+//                    txn_output_t *cur_out = &ctx->txn.outputs[i];
+//                    address_to_base58(cur_out->address, address);
+//                    screen_printf("    Output address %s\n", address);
+//                    screen_printf("    Number of coins %u\n", (unsigned long int) cur_out->coin_num);
+//                    screen_printf("    Number of hours %u\n\n", (unsigned long int) cur_out->hour_num);
+//                }
+//                screen_printf("\n\n");
+                ctx->curr_obj = 0;
+                ctx->txn_state = TXN_RET_SIGS;
+                break;
+            }
+            case TXN_RET_SIGS: {
+                int i = 0;
+                while (ctx->curr_obj != ctx->txn.in_num) {
+                    if (*tx + SIG_LEN > 255) {
+                        THROW(0x6199);
+                    }
+                    int offset = i * SIG_LEN + (ctx->curr_obj == 0 ? SHA256_HASH_LEN : 0);
+                    os_memmove(G_io_apdu_buffer + offset,
+                               ctx->txn.sig_input[ctx->curr_obj].signature,
+                               SIG_LEN);
+                    *tx += SIG_LEN;
+                    ctx->curr_obj += 1;
+                    i++;
                 }
-                screen_printf("\n\n");
-
                 ctx->initialized = false;
                 THROW(INS_RET_SUCCESS);
             }

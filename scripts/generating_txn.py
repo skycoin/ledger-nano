@@ -1,9 +1,21 @@
+import adpu_call
 from sign_transaction import send_txn
+
+def to_le(num, byte_number):
+    hx = hex(num)[2:]
+    hx = ('0' if len(hx) % 2 == 1 else '') + hx
+    hx = [hx[i:i+2] for i in range(0, len(hx), 2)]
+    hx = "".join(hx[::-1])
+    hx = hx + (byte_number*2 - len(hx))*'0'
+    return hx
 
 class Input:
     def __init__(self, uxId, address_index):
         self.uxId = uxId
         self.address_index = address_index
+
+    def serialized(self):
+        return self.uxId + to_le(self.address_index, 4)
 
 class Output:
     @staticmethod
@@ -23,44 +35,45 @@ class Output:
     def serialized(self):
         ret = self.addr
         for sky in [self.amount, self.fee]:
-            sky = hex(sky)[2:]
-            sky = ('0' if len(sky) % 2 == 1 else '') + sky
-            sky = [sky[i:i+2] for i in range(0, len(sky), 2)]
-            sky = "".join(sky[::-1])
-            sky = sky + (16 - len(sky))*'0'
+            sky = to_le(sky, 8)
             ret = ret + sky
         return ret
 
 def createRawTransaction(inputs, outputs):
     type = "00"
+    input_num = to_le(len(inputs), 4)
+    output_num = to_le(len(outputs), 4)
 
-    input_num = hex(len(inputs))[2:]
-    input_num = ('0' if len(input_num) % 2 == 1 else '') + input_num
-    input_num = input_num + (8 - len(input_num))*'0'
-
-    output_num = hex(len(outputs))[2:]
-    output_num = ('0' if len(output_num) % 2 == 1 else '') + output_num
-    output_num = output_num + (8 - len(output_num))*'0'
-    txn_in_out = input_num + "".join(inputs) + output_num + "".join(map(lambda x: x.serialized(), outputs))
+    txn_in_out = input_num + "".join(map(lambda x: x.serialized(), inputs)) + output_num + "".join(map(lambda x: x.serialized(), outputs))
     inner_hash, sigs = send_txn(txn_in_out)
-
+    print(inner_hash, len(sigs))
+    txn_in_out = input_num + "".join(map(lambda x: x.uxId, inputs)) + output_num + "".join(map(lambda x: x.serialized(), outputs))
     txn = type + inner_hash + input_num + "".join(sigs) + txn_in_out
-    length = hex(len(txn)//2+4)[2:]
-    length = ('0' if len(length) % 2 == 1 else '') + length
-    length = [length[i:i+2] for i in range(0, len(length), 2)]
-    length = "".join(length[::-1])
-    length = length + (8 - len(length))*'0'
+    length = to_le(len(txn)//2+4, 4)
     txn = length + txn
     return txn
 
-outputs = [Output("LtdGkoRPyvBASvZZ7WJWUBSgosfCUjmkYo", 0.01, 1)]
-           # Output("hbWbgT97s7RoGEfqoiiJgV5pkdaAsBow3o", 0.01, 1),
-           # Output("2cPurVYpW1MCqk7cjNjqDG531BoRCgJ8iTD", 0.01, 1)]
-           # Output("qGJNvH2LM1jrawo1ZggreLYaTpwUXCkzWh", 0.01, 1),
-           # Output("HiDEhbBdNu2pSb3pbTLKKSbjWaqJTQWsAi", 0.01, 1)]
+outputs = [Output("LtdGkoRPyvBASvZZ7WJWUBSgosfCUjmkYo", 0.01, 1),
+           Output("hbWbgT97s7RoGEfqoiiJgV5pkdaAsBow3o", 0.01, 1),
+           Output("2cPurVYpW1MCqk7cjNjqDG531BoRCgJ8iTD", 0.01, 1),
+           Output("qGJNvH2LM1jrawo1ZggreLYaTpwUXCkzWh", 0.01, 1),
+           Output("HiDEhbBdNu2pSb3pbTLKKSbjWaqJTQWsAi", 0.01, 1),
+           Output("2x5dAJzZQzKHQNKwrGCYz8cvehxDWMp7i1", 0.01, 1),
+           Output("2Fxv5KoVxyTDHdSHFFMxoQrfUQZPs9DM9XR", 0.01, 1),
+           Output("2NQAW9WJSDxosKVxosrC8RkWHtHTveM9oDr", 0.01, 1),
+           Output("2ZsCqmqhZ8t7yAerdYLbCfTj4xtdPB97W6k", 0.01, 1)
+           ]
 
-# inputs = ["abf988e09d2e6e17f464b37739f939c2203489c459491a04875c2612f1e308fe"]
-inputs = ["be6e678ad3edb872a199fd710c8e3da2c51a926303affd14b5009fda8bd90572"]
+inputs = [Input("fef9f78f541034e05388c55a63ba2d5a48a9af4f2a98d0dae94929619d306319", 0),
+          Input("80b17dfdac22f09e200a9f2a1604603952b2e2467d65929403f54ea9c0e13b0f", 1),
+          Input("f933e5fad352fc7b703cee1483373b597024b8064c7f4614cdb911f58c3ae83b", 2),
+          Input("f53122e7687eaab62d57f2c63fa29d8b23b8416769e168f3ce4a1a07eb930601", 3),
+          Input("b0b61b32775449657e3bdfc232174cc14dbcfa822494f812313df0a651bebde1", 4),
+          Input("f83b6c8572c796703367f081a3e635be32d531e08e909f9bb6f5e7c1d2de21ac", 5),
+          Input("64532b664d5d89373021dd37565a678ff489191becf1a78091eeebc24f37548d", 6),
+          Input("6352b7f806ba23f1f3581e3dbc80ca7893e123cdfa64d2d0bfe4c68ec3fc4eba", 7),
+          Input("58910a2ec90d92945abd711a8530731eea819b74f66fe90770e25e082852d157", 8)
+          ]
 
 # input = "b1b1499b5bddff2bd6c1b40f0744bed32c1eb2dfd909a5aaa928c1c1b641fd84"
 txn = createRawTransaction(inputs, outputs)

@@ -1,8 +1,8 @@
 #ifndef LEDGER_NANO_TXN_H
 #define LEDGER_NANO_TXN_H
 
-#define MAX_INPUTS 10
-#define MAX_OUTPUTS 8
+#define MAX_INPUTS 9
+#define MAX_OUTPUTS 9
 
 typedef struct {
     unsigned char address[21];
@@ -11,7 +11,7 @@ typedef struct {
 } txn_output_t;
 
 typedef union {
-    unsigned char input[32];
+    unsigned char input[36];
     unsigned char signature[65];
 } sig_input_t;
 
@@ -30,6 +30,7 @@ typedef enum {
     TXN_START_OUT,
     TXN_OUT,
     TXN_READY,
+    TXN_RET_SIGS,
     TXN_ERROR
 } txn_state_t;
 
