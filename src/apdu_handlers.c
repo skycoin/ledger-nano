@@ -141,7 +141,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 break;
             }
             case TXN_IN: {
-                // 32 bytes are input
+                // 32 bytes are input + 4 bytes address_index of BIP44 address
                 if (ctx->offset + dataLength < 36) {
                     save_data_to_buffer(&dataBuffer, &dataLength);
                 } else {
@@ -205,6 +205,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 os_memmove(G_io_apdu_buffer, ctx->txn.inner_hash, SHA256_HASH_LEN);
                 *tx += SHA256_HASH_LEN;
                 screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
+                unsigned int old_bip44 = global.getPublicKeyContext.bip44_path[4];
                 for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
 //                    PRINTF("    Input %.*h\n", SHA256_HASH_LEN, ctx->txn.sig_input[i].input);
 
@@ -217,17 +218,14 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     cx_hash(&hash.header, CX_LAST, ctx->txn.sig_input[i].input, SHA256_HASH_LEN, sig_hash);
 
                     unsigned int new_bip44 = U4LE(ctx->txn.sig_input[i].input, 32);
-                    unsigned int old_bip44 = global.getPublicKeyContext.bip44_path[4];
                     global.getPublicKeyContext.bip44_path[4] = new_bip44;
                     derive_keypair(global.getPublicKeyContext.bip44_path, &private_key, NULL);
-                    global.getPublicKeyContext.bip44_path[4] = old_bip44;
-
-                    unsigned char signature[SIG_LEN];
 
                     sign(&private_key, sig_hash, ctx->txn.sig_input[i].signature);
 
 //                    PRINTF("    Signature %.*h\n\n", SIG_LEN, ctx->txn.sig_input[i].signature);
                 }
+                global.getPublicKeyContext.bip44_path[4] = old_bip44;
                 screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
 //                for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
 //                    char address[36];
@@ -243,18 +241,17 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 break;
             }
             case TXN_RET_SIGS: {
-                int i = 0;
+//                screen_printf("\n Transaction is valid\n");
+                int offset = ctx->curr_obj == 0 ? SHA256_HASH_LEN : 0;
                 while (ctx->curr_obj != ctx->txn.in_num) {
-                    if (*tx + SIG_LEN > 255) {
+                    if (offset + SIG_LEN > 255) {
                         THROW(0x6199);
                     }
-                    int offset = i * SIG_LEN + (ctx->curr_obj == 0 ? SHA256_HASH_LEN : 0);
                     os_memmove(G_io_apdu_buffer + offset,
-                               ctx->txn.sig_input[ctx->curr_obj].signature,
+                               ctx->txn.sig_input[ctx->curr_obj++].signature,
                                SIG_LEN);
                     *tx += SIG_LEN;
-                    ctx->curr_obj += 1;
-                    i++;
+                    offset += SIG_LEN;
                 }
                 ctx->initialized = false;
                 THROW(INS_RET_SUCCESS);

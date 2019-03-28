@@ -48,7 +48,7 @@ static void sky_main(void) {
 
                         // Find function that will handle specific request
                         handler_fn_t *handlerFn = lookupHandler(G_io_apdu_buffer[OFFSET_INS]);
-                        screen_printf("inst: %x\n", G_io_apdu_buffer[OFFSET_INS]);
+//                        screen_printf("inst: %x\n", G_io_apdu_buffer[OFFSET_INS]);
                         if (!handlerFn) {
                             THROW(0x6D00);
                         }
