@@ -24,6 +24,15 @@ typedef struct {
 	char address_copy[SCREEN_MAX_CHARS]; // copy of address to be then displayed as scrolling text (for UI needs only)
 } getPublicKeyContext_t;
 
+typedef struct { 
+	char custom_text_line_1[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. " You received ") 
+	char custom_text_line_2[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. "new transaction") 
+
+	char out_address[36]; // output address(output) 
+	char out_address_copy[SCREEN_MAX_CHARS]; // output copy of address to be then displayed as scrolling text (for UI needs only) 
+} transactionContext_t; 
+
+
 typedef struct {
     bool initialized;
     cx_sha256_t hash;
@@ -37,6 +46,7 @@ typedef struct {
 
 typedef struct {
     getPublicKeyContext_t getPublicKeyContext;
+	transactionContext_t transactionContext; 
     signTxnContext_t signTxnContext;
 } commandContext;
 
