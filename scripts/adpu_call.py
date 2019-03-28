@@ -24,5 +24,4 @@ def send_to_ledger(ins, p1=0x0, p2=0x0, data="", le=0x0):
         raise ValueError("Data is too big (max 256 bytes)")
     le = ('0' if le < 16 else '') + hex(le)[2:]
     req = req + lc + data + le
-    print req
     return dongle.exchange(bytes(bytearray.fromhex(req)))

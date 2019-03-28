@@ -5,10 +5,10 @@
 #include "cx.h"
 #include "os_io_seproxyhal.h"
 
-#include "sky.h"
-#include "ux.h"
+#include "../skycoin-api/skycoin_crypto.h"
+#include "../ux.h"
 
-#include "glyphs.h"
+#include "../glyphs.h"
 
 extern ux_state_t ux;
 

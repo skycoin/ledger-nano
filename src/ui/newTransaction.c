@@ -1,12 +1,5 @@
 #include "newTransaction.h"
 
-#include "main_ui.h"
-#include "ux.h"
-#include "sky.h"
-
-#include "string.h"
-
-#include "os_io_seproxyhal.h"
 
 // UI struct for screen with custom screen (e.g. You got new TX)
 const bagl_element_t bagl_custom_text[] = {

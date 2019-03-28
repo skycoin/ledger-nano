@@ -1,6 +1,6 @@
 #include "main_ui.h"
-#include "ux.h"
-#include "sky.h"
+#include "../ux.h"
+#include "../skycoin-api/skycoin_crypto.h"
 
 #include "string.h"
 

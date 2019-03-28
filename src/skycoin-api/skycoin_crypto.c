@@ -1,4 +1,4 @@
-#include "sky.h"
+#include "skycoin_crypto.h"
 
 #define INS_RET_WRONG_DATA 0x6A80
 

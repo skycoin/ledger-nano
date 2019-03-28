@@ -3,8 +3,8 @@
 
 #include "os_io_seproxyhal.h"
 
-#include "sky.h"
-#include "main_ui.h"
+#include "skycoin-api/skycoin_crypto.h"
+#include "ui/main_ui.h"
 #include "ux.h"
 
 #include "apdu_handlers.h"

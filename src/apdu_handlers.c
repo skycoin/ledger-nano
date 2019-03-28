@@ -1,12 +1,7 @@
 #include <inttypes.h>
 
 #include "apdu_handlers.h"
-#include "newTransaction.h"
 
-#include "sky.h"
-#include "ux.h"
-#include "cx.h"
-#include "util_funcs.h"
 
 
 #define U8LE(buf, off) (((uint64_t)(U4LE(buf, off + 4)) << 32) | ((uint64_t)(U4LE(buf, off))     & 0xFFFFFFFF))
@@ -135,8 +130,8 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     ctx->curr_obj = 0;
                 }
 
-                go_to_custom_text_screen("You received\0", 13, "new transaction", 15);
-                *flags |= IO_ASYNCH_REPLY;
+//                go_to_custom_text_screen("You received\0", 13, "new transaction", 15);
+//                *flags |= IO_ASYNCH_REPLY;
 
                 break;
             }

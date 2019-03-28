@@ -21,8 +21,8 @@ def send_txn(txn):
     ret =binascii.hexlify(ret)
     while len(ret)//2 < 32 + unpack("<L", binascii.a2b_hex(txn[:8]))[0]*65:
         ret = ret + binascii.hexlify(send_to_ledger(ins=0x10, p1=0x0, data=""))
-    print 2*len(ret)
-    print unpack("<L", binascii.a2b_hex(txn[:8]))[0]*65 + 32
+    # print 2*len(ret)
+    # print unpack("<L", binascii.a2b_hex(txn[:8]))[0]*65 + 32
     # txn = binascii.hexlify(ret)
     txn = ret
     inner_hash = txn[:32*2]
