@@ -27,7 +27,6 @@ static unsigned int bagl_ui_address_button(unsigned int button_mask, unsigned in
 
 // Preprocessor for address screen
 // Each iteration it "moves" the text of `address` so it looks like scrolling-text
-int current_offset, direction;
 unsigned int ui_address_scrolling_text_prepro(const bagl_element_t *element) {
     if(element->component.userid == 0x83) {
         strcpy(element->text, global.getPublicKeyContext.address + current_offset);

@@ -39,8 +39,8 @@ const bagl_element_t bagl_output_confirmation_screen[] = {
     UI_BACKGROUND(),
     UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_CROSS),
     UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_CHECK),
-    UI_TEXT(0x00, 20, 12, 88, global.transactionContext.info_line),
-    UI_BOLD_TEXT(0x83, 25, 27, 88, global.transactionContext.out_address_copy),
+    UI_TEXT(0x83, 23, 30, 85, global.transactionContext.out_address_or_amount),
+    UI_BOLD_TEXT(0x80, 20, 12, 88, global.transactionContext.info_line)
 };
 
 unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, unsigned int button_mask_counter) {
@@ -62,14 +62,60 @@ unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, un
 	return 0;
 }
 
+// Preprocessor for output confirmation screen
+// we have 2 lines: info(Address or SKY) and description(actual/specific value)
+// if currently we are displaying address, then we wait until it goes forward and backward 
+// and then switch to the screen with SKY, where we just display amount of SKY(statically) 
+unsigned int output_confirmation_screen_prepro(const bagl_element_t *element) {
+    if(element->component.userid == 0x80){ // info line
+        strcpy(element->text, "Address:\0");
+
+        if(current_offset == -1){
+            strcpy(element->text, "SKY:\0");
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY * 3);   
+        } else {
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+        }
+    }
+
+    if(element->component.userid == 0x83){ // description line (out_address_or_amount)
+        strcpy(element->text, global.transactionContext.out_address + current_offset);
+        ((char *) element->text) [SCREEN_MAX_CHARS] = '\0';
+
+        current_offset += direction;
+
+        // firstly we update current_offset, then wait and after that copy and change the string 
+        // so check equality with -1, but not with 0
+        // the same with (current_offset + SCREEN_MAX_CHARS) and strlen
+        if(current_offset == -1 || (current_offset + SCREEN_MAX_CHARS == (strlen(global.transactionContext.out_address) + 1))){ 
+            direction *= -1; 
+
+            if(direction == 1){ // change text to the amount of skycoins and wait much longer
+                strcpy(element->text, "1.23");
+                UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY * 3);   
+            } else {
+                UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY); // wait more if we change direction
+            }
+        } else {
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+        }
+    }
+
+    return 1;
+}
+
 void show_output_confirmation(){
+    // initialize variables for updating the UI each interval 
+    ux_step = 0; ux_step_count = 4;
+    // Initialize variables for working with scrolling text
+    current_offset = 0; direction = 1;
+
     os_memmove(global.transactionContext.out_address, "12345678976543234567876543\0", 27);
-    os_memmove(global.transactionContext.out_address_copy, "98765434562134\0", 15);
-    os_memmove(global.transactionContext.amount, "SKY: 1.23\0", 10);
-    os_memmove(global.transactionContext.info_line, "Address:\0", 9);
+    os_memmove(global.transactionContext.amount, "1.23\0", 5);
+    // os_memmove(global.transactionContext.info_line, "Address:\0", 9);
 
-    // os_memmove(global.transactionContext.current_output, 1, 4);
-    // os_memmove(global.transactionContext.total_outputs, 5, 4);
+    global.transactionContext.current_output = 1;
+    global.transactionContext.total_outputs = 5;
 
-    UX_DISPLAY(bagl_output_confirmation_screen, NULL);   
+    UX_DISPLAY(bagl_output_confirmation_screen, output_confirmation_screen_prepro);   
 }

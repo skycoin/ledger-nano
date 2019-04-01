@@ -32,7 +32,7 @@ typedef struct {
     unsigned int current_output; // currently processed output
     char info_line[SCREEN_MAX_CHARS];
 	char out_address[36]; // output address(output) 
-	char out_address_copy[SCREEN_MAX_CHARS]; // output copy of address to be then displayed as scrolling text (for UI needs only)
+	char out_address_or_amount[SCREEN_MAX_CHARS]; // output copy of address or amount(they will be changing each n second) to be then displayed as scrolling text (for UI needs only)
     char amount[SCREEN_MAX_CHARS]; // amount of coint to send 
 } transactionContext_t; 
 
