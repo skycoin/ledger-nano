@@ -91,7 +91,7 @@ unsigned int output_confirmation_screen_prepro(const bagl_element_t *element) {
             direction *= -1; 
 
             if(direction == 1){ // change text to the amount of skycoins and wait much longer
-                strcpy(element->text, "1.23");
+                strcpy(element->text, global.transactionContext.amount);
                 UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY * 3);   
             } else {
                 UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY); // wait more if we change direction
@@ -111,9 +111,8 @@ void show_output_confirmation(){
     current_offset = 0; direction = 1;
 
     os_memmove(global.transactionContext.out_address, "12345678976543234567876543\0", 27);
-    os_memmove(global.transactionContext.amount, "1.23\0", 5);
-    // os_memmove(global.transactionContext.info_line, "Address:\0", 9);
-
+    os_memmove(global.transactionContext.amount, "123.45\0", 7);
+    
     global.transactionContext.current_output = 1;
     global.transactionContext.total_outputs = 5;
 
