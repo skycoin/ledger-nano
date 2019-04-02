@@ -1,5 +1,6 @@
 #include "newTransaction.h"
 
+#include "string.h"
 
 // UI struct for screen with custom screen (e.g. You got new TX)
 const bagl_element_t bagl_custom_text[] = {
@@ -39,6 +40,9 @@ const bagl_element_t bagl_output_confirmation_screen[] = {
     UI_BACKGROUND(),
     UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_CROSS),
     UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_CHECK),
+
+    UI_TEXT_CUSTOM_FONT(0x11, 4, 10, 20, global.transactionContext.current_output_display, BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_LEFT),
+
     UI_TEXT(0x83, 23, 30, 85, global.transactionContext.out_address_or_amount),
     UI_BOLD_TEXT(0x80, 20, 12, 88, global.transactionContext.info_line)
 };
@@ -104,6 +108,14 @@ unsigned int output_confirmation_screen_prepro(const bagl_element_t *element) {
     return 1;
 }
 
+void prepare_current_output_for_display(){
+    os_memset(global.transactionContext.current_output_display, 0, SCREEN_MAX_CHARS);
+    char tmp[SCREEN_MAX_CHARS];
+    SPRINTF(tmp, "%d/%d", global.transactionContext.current_output, global.transactionContext.total_outputs);
+    
+    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp));
+}
+
 void show_output_confirmation(){
     // initialize variables for updating the UI each interval 
     ux_step = 0; ux_step_count = 4;
@@ -113,8 +125,8 @@ void show_output_confirmation(){
     os_memmove(global.transactionContext.out_address, "12345678976543234567876543\0", 27);
     os_memmove(global.transactionContext.amount, "123.45\0", 7);
     
-    global.transactionContext.current_output = 1;
-    global.transactionContext.total_outputs = 5;
+    global.transactionContext.current_output = 1; global.transactionContext.total_outputs = 5;
+    prepare_current_output_for_display();
 
     UX_DISPLAY(bagl_output_confirmation_screen, output_confirmation_screen_prepro);   
 }

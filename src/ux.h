@@ -30,6 +30,7 @@ typedef struct {
 
     unsigned int total_outputs; // total number of outputs in transaction
     unsigned int current_output; // currently processed output
+    char current_output_display[SCREEN_MAX_CHARS]; // only for UI
     char info_line[SCREEN_MAX_CHARS];
 	char out_address[36]; // output address(output) 
     char amount[SCREEN_MAX_CHARS]; // amount of coint to send
@@ -69,6 +70,7 @@ extern ux_state_t ux;
 #define UI_BACKGROUND() {{BAGL_RECTANGLE,0,0,0,128,32,0,0,BAGL_FILL,0,COLOR_WHITE,0,0},NULL,0,0,0,NULL,NULL,NULL}
 #define UI_ICON_LEFT(userid, glyph) {{BAGL_ICON,userid,3,12,7,7,0,0,0,COLOR_WHITE,0,0,glyph},NULL,0,0,0,NULL,NULL,NULL}
 #define UI_ICON_RIGHT(userid, glyph) {{BAGL_ICON,userid,117,13,8,6,0,0,0,COLOR_WHITE,0,0,glyph},NULL,0,0,0,NULL,NULL,NULL}
+#define UI_TEXT_CUSTOM_FONT(userid, x, y, w, text, font) {{BAGL_LABELINE,userid,x,y,w,12,0,0,0,COLOR_WHITE,0,font,0},(char *)text,0,0,0,NULL,NULL,NULL}
 #define UI_TEXT(userid, x, y, w, text) {{BAGL_LABELINE,userid,x,y,w,12,0,0,0,COLOR_WHITE,0,DEFAULT_FONT,0},(char *)text,0,0,0,NULL,NULL,NULL}
 #define UI_BOLD_TEXT(userid, x, y, w, text) {{BAGL_LABELINE,userid,x,y,w,12,0,0,0,COLOR_WHITE,0,BOLD_FONT,0},(char *)text,0,0,0,NULL,NULL,NULL}
 

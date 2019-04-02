@@ -12,7 +12,7 @@
 // UI struct for screen with custom screen (e.g. You got new TX)
 extern const bagl_element_t bagl_custom_text[3];
 // ...
-extern const bagl_element_t bagl_output_confirmation_screen[5];
+extern const bagl_element_t bagl_output_confirmation_screen[6];
 
 
 // Handler for buttons pressed action
@@ -24,6 +24,8 @@ void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size
 // ...
 unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, unsigned int button_mask_counter);
 
+void prepare_current_output_for_display();
 void show_output_confirmation();
+
 
 #endif
