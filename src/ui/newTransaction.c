@@ -13,18 +13,16 @@ const bagl_element_t bagl_custom_text[] = {
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
         case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
-            //screen_printf("button trigger at custom text screen \n");
-//            UX_MENU_DISPLAY(0, menu_main, NULL);
-//            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx);
-//            show_output_confirmation();
-            if (!global.signTxnContext.dataLength) {
-                G_io_apdu_buffer[0] = 0x90;
-                G_io_apdu_buffer[1] = 0x00;
-                io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-            }
+        //  screen_printf("button trigger at custom text screen \n");
+           
+           parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx, global.signTxnContext.flags);
 
-            // TODO: go to the screen with input address
-            // probably need to "reimplement" code from sign transaction function    
+            // if (!global.signTxnContext.dataLength) {
+            //     G_io_apdu_buffer[0] = 0x90;
+            //     G_io_apdu_buffer[1] = 0x00;
+            //     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+            // }
+
             break;
     }
     ui_idle();

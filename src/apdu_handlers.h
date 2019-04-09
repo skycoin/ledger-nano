@@ -68,5 +68,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
 
 void parseTxn(uint8_t *dataBuffer, uint16_t* dataLength, volatile unsigned int *tx, volatile unsigned int *flags);
 
+void io_async_exchange_ok();
+
 #endif //SKYCOIN_APDU_HANDLERS_H
 
