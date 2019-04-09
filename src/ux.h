@@ -21,21 +21,21 @@ extern uint8_t ux_loop_over_curr_element; // only for Nano S
 typedef struct {
     unsigned int bip44_path[BIP44_PATH_LEN];
     char address[36]; // set default value for address
-	char address_copy[SCREEN_MAX_CHARS]; // copy of address to be then displayed as scrolling text (for UI needs only)
+    char address_copy[SCREEN_MAX_CHARS]; // copy of address to be then displayed as scrolling text (for UI needs only)
 } getPublicKeyContext_t;
 
-typedef struct { 
-	char custom_text_line_1[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. " You received ") 
-	char custom_text_line_2[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. "new transaction") 
+typedef struct {
+    char custom_text_line_1[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. " You received ")
+    char custom_text_line_2[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. "new transaction")
 
     unsigned int total_outputs; // total number of outputs in transaction
     unsigned int current_output; // currently processed output
     char current_output_display[SCREEN_MAX_CHARS]; // only for UI
     char info_line[SCREEN_MAX_CHARS];
-	char out_address[36]; // output address(output) 
+    char out_address[36]; // output address(output)
     char amount[SCREEN_MAX_CHARS]; // amount of coint to send
     char out_address_or_amount[SCREEN_MAX_CHARS]; // output copy of address or amount(they will be changing each n second) to be then displayed as scrolling text (for UI needs only) 
-} transactionContext_t; 
+} transactionContext_t;
 
 
 typedef struct {
@@ -47,11 +47,18 @@ typedef struct {
     unsigned char buffer[37];
     unsigned char offset;
     unsigned char curr_obj;
+
+
+    uint8_t *dataBuffer;
+    uint16_t dataLength;
+    volatile unsigned int *flags;
+    volatile unsigned int *tx;
+//    bool is_approved;
 } signTxnContext_t;
 
 typedef struct {
     getPublicKeyContext_t getPublicKeyContext;
-	transactionContext_t transactionContext; 
+    transactionContext_t transactionContext;
     signTxnContext_t signTxnContext;
 } commandContext;
 

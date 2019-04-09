@@ -4,6 +4,7 @@
 #include "main_ui.h"
 #include "../ux.h"
 #include "../skycoin-api/skycoin_crypto.h"
+#include "../apdu_handlers.h"
 
 #include "string.h"
 

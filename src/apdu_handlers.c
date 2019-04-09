@@ -3,7 +3,6 @@
 #include "apdu_handlers.h"
 
 
-
 #define U8LE(buf, off) (((uint64_t)(U4LE(buf, off + 4)) << 32) | ((uint64_t)(U4LE(buf, off))     & 0xFFFFFFFF))
 
 static signTxnContext_t *ctx = &global.signTxnContext;
@@ -106,14 +105,7 @@ void read_data_to_buffer(uint8_t **dataBuffer, uint16_t *dataLength, unsigned ch
     ctx->offset = 0;
 }
 
-void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
-                   volatile unsigned int *tx) {
-    if (!ctx->initialized) {
-        cx_sha256_init(&ctx->hash);
-        ctx->txn_state = TXN_START_IN;
-        ctx->initialized = true;
-        ctx->offset = 0;
-    }
+void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *tx, volatile unsigned int *flags) {
     while (dataLength || ctx->txn_state == TXN_READY || ctx->txn_state == TXN_ERROR || ctx->txn_state == TXN_RET_SIGS) {
         switch (ctx->txn_state) {
             case TXN_START_IN: {
@@ -129,10 +121,6 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     ctx->txn_state = TXN_IN;
                     ctx->curr_obj = 0;
                 }
-
-               go_to_custom_text_screen("You received\0", 13, "new transaction", 15);
-               *flags |= IO_ASYNCH_REPLY;
-
                 break;
             }
             case TXN_IN: {
@@ -183,13 +171,17 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
 
                     ctx->curr_obj += 1;
 
-//                    screen_printf("Cur object %d %d\n", ctx->curr_obj, dataLength);
+                    screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
+                    screen_printf("Cur object %d %d\n", ctx->curr_obj, dataLength);
                     if (ctx->curr_obj == ctx->txn.out_num) {
                         cx_hash(&ctx->hash.header, CX_LAST, ctx->buffer, 37, ctx->txn.inner_hash);
                         ctx->txn_state = TXN_READY;
                     } else {
                         cx_hash(&ctx->hash.header, 0, ctx->buffer, 37, NULL);
                     }
+                    show_output_confirmation();
+                    *flags |= IO_ASYNCH_REPLY;
+                    return;
                 }
                 break;
             }
@@ -258,5 +250,23 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
             }
         }
     }
+}
+
+void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
+                   volatile unsigned int *tx) {
+    if (!ctx->initialized) {
+        cx_sha256_init(&ctx->hash);
+        ctx->txn_state = TXN_START_IN;
+        ctx->initialized = true;
+        ctx->offset = 0;
+
+        ctx->dataBuffer = dataBuffer;
+        ctx->dataLength = dataLength;
+        ctx->flags = flags;
+        ctx->tx = tx;
+
+//        go_to_custom_text_screen("You received", 13, "new transaction", 15);
+    }
+    parseTxn(ctx->dataBuffer, &ctx->dataLength, ctx->tx, ctx->flags);
     THROW(INS_RET_SUCCESS);
 }
