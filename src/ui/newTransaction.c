@@ -12,20 +12,19 @@ const bagl_element_t bagl_custom_text[] = {
 // Handler for buttons pressed action
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
-        //  screen_printf("button trigger at custom text screen \n");
-           
-           parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx, global.signTxnContext.flags);
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:           
+            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx, global.signTxnContext.flags);
 
-            // if (!global.signTxnContext.dataLength) {
-            //     G_io_apdu_buffer[0] = 0x90;
-            //     G_io_apdu_buffer[1] = 0x00;
-            //     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-            // }
+            if (!global.signTxnContext.dataLength) {
+                screen_printf("custom text screen : response OK\n");
+                io_async_exchange_ok();
+            }
+
+            ui_idle(); // TODO: show loading screen here
 
             break;
     }
-    ui_idle();
+
     return 0;
 }
 
@@ -37,7 +36,6 @@ void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size
     if (second_line)
         os_memmove(global.transactionContext.custom_text_line_2, second_line, MIN(second_size, SCREEN_MAX_CHARS));
 
-//    screen_printf("Show display\n");
     UX_DISPLAY(bagl_custom_text, NULL);
 }
 
@@ -59,18 +57,25 @@ unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, un
     switch (button_mask) {
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
             screen_printf("confirmation: NO \n");
+            
             UX_MENU_DISPLAY(0, menu_main, NULL);
-            //TODO: Return Error, that txn failed
-//            io_exchange()
-
+            
+            // TODO: Return Error, that txn failed
             // TODO: cancel the whole signing process 
             break;
+
         case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
             screen_printf("confirmation: YES \n");
 //            global.signTxnContext.is_approved = true;
 //            UX_MENU_DISPLAY(0, menu_main, NULL);
-            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx,
-                     global.signTxnContext.flags);
+            
+            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx, global.signTxnContext.flags);
+            if (!global.signTxnContext.dataLength) {
+                screen_printf("output : response OK\n");
+                io_async_exchange_ok();
+            }
+
+            ui_idle(); // TODO: show loading screen here
 
             // TODO: go to the another output or finish with that if no any more
             break;
@@ -134,6 +139,7 @@ void show_output_confirmation() {
     // initialize variables for updating the UI each interval 
     ux_step = 0;
     ux_step_count = 4;
+
     // Initialize variables for working with scrolling text
     current_offset = 0;
     direction = 1;
@@ -141,9 +147,17 @@ void show_output_confirmation() {
     os_memmove(global.transactionContext.out_address, "12345678976543234567876543\0", 27);
     os_memmove(global.transactionContext.amount, "123.45\0", 7);
 
+    os_memmove(global.transactionContext.info_line, "Address\0", 8);
+    os_memmove(global.transactionContext.out_address_or_amount, global.transactionContext.out_address, 27);
+
     global.transactionContext.current_output = 1;
     global.transactionContext.total_outputs = 5;
     prepare_current_output_for_display();
+
+    screen_printf("before display confirmation screen\n");
+    screen_printf("current_output_display: %s\n", global.transactionContext.current_output_display);
+    screen_printf("out_address_or_amount: %s\n", global.transactionContext.out_address_or_amount);
+    screen_printf("info_line: %s\n", global.transactionContext.info_line);
 
     UX_DISPLAY(bagl_output_confirmation_screen, output_confirmation_screen_prepro);
 }
