@@ -105,14 +105,17 @@ void read_data_to_buffer(uint8_t **dataBuffer, uint16_t *dataLength, unsigned ch
     ctx->offset = 0;
 }
 
-void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *tx, volatile unsigned int *flags) {
+int parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *tx, volatile unsigned int *flags) {
     // screen_printf("Start dataLength: %d\n", *dataLength);
+    int fl = 1;
+    int cur_out_num = 0;
 
-    while (*dataLength || ctx->txn_state == TXN_READY || ctx->txn_state == TXN_ERROR || ctx->txn_state == TXN_RET_SIGS) {
+    while (*dataLength || ctx->txn_state == TXN_READY || ctx->txn_state == TXN_ERROR ||
+           ctx->txn_state == TXN_RET_SIGS) {
         switch (ctx->txn_state) {
             case TXN_START_IN: {
-            //    screen_printf("START_IN\n");
-            //    screen_printf("dataLength: %d\n", *dataLength);
+                screen_printf("START_IN\n");
+                //    screen_printf("dataLength: %d\n", *dataLength);
                 if (ctx->offset + *dataLength < 4) {
                     save_data_to_buffer(&dataBuffer, dataLength);
                 } else {
@@ -128,14 +131,14 @@ void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *
             }
             case TXN_IN: {
                 // 32 bytes are input + 4 bytes address_index of BIP44 address
-                // screen_printf("TXN_IN dataLength: %d\n", *dataLength);
+                screen_printf("TXN_IN dataLength: %d\n", *dataLength);
 
                 if (ctx->offset + *dataLength < 36) {
                     save_data_to_buffer(&dataBuffer, dataLength);
                     // screen_printf("data has been saved to the buffer, dataLength: %d\n", *dataLength);
 
                 } else {
-                    // screen_printf("IN\n");
+                    screen_printf("IN\n");
                     // screen_printf("dataLength: %d\n", *dataLength);
                     read_data_to_buffer(&dataBuffer, dataLength, 36);
 
@@ -149,7 +152,7 @@ void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *
                 break;
             }
             case TXN_START_OUT: {
-                // screen_printf("TXN_START_OUT dataLength: %d\n", *dataLength);
+                screen_printf("TXN_START_OUT dataLength: %d\n", *dataLength);
 
                 if (*dataLength < 4) {
                     save_data_to_buffer(&dataBuffer, dataLength);
@@ -169,13 +172,13 @@ void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *
                 break;
             }
             case TXN_OUT: {
-                // screen_printf("TXT_OUT dataLength: %d\n", *dataLength);
+                screen_printf("TXT_OUT dataLength: %d\n", *dataLength);
 
                 // 37 bytes are input
                 if (ctx->offset + *dataLength < 37) {
                     save_data_to_buffer(&dataBuffer, dataLength);
                 } else {
-                //    screen_printf("OUT\n");
+                    //    screen_printf("OUT\n");
                     read_data_to_buffer(&dataBuffer, dataLength, 37);
 
                     txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj];
@@ -186,17 +189,19 @@ void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *
 
                     ctx->curr_obj += 1;
 
-                    // screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
-                    // screen_printf("Cur object %d %d\n", ctx->curr_obj, *dataLength);
+                    screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
+                    screen_printf("Cur object %d %d\n", ctx->curr_obj, *dataLength);
                     if (ctx->curr_obj == ctx->txn.out_num) {
                         cx_hash(&ctx->hash.header, CX_LAST, ctx->buffer, 37, ctx->txn.inner_hash);
-                        ctx->txn_state = TXN_READY;
+//                        ctx->txn_state = TXN_READY;
+//                        cur_out_num = 0;
+//                        io_async_exchange_ok();
+//                        show_output_confirmation();
                     } else {
                         cx_hash(&ctx->hash.header, 0, ctx->buffer, 37, NULL);
                     }
-
-                    show_output_confirmation();
-                    *flags |= IO_ASYNCH_REPLY;
+                    fl = 0;
+                    cur_out_num += 1;
                 }
                 break;
             }
@@ -243,7 +248,7 @@ void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *
                 break;
             }
             case TXN_RET_SIGS: {
-               screen_printf("\n Transaction is valid\n");
+                screen_printf("\n Transaction is valid\n");
                 int offset = ctx->curr_obj == 0 ? SHA256_HASH_LEN : 0;
                 while (ctx->curr_obj != ctx->txn.in_num) {
                     if (offset + SIG_LEN > 255) {
@@ -266,16 +271,23 @@ void parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *
         }
     }
 
-    // screen_printf("After state machine, dataLength: %d\n", *dataLength);
-    
-    return;
+    if (cur_out_num) {
+//        io_async_exchange_ok();
+        show_output_confirmation();
+        *flags |= IO_ASYNCH_REPLY;
+    }
+
+//    screen_printf("After state machine, dataLength: %d\n", *dataLength);
+
+    return fl;
 }
 
-void io_async_exchange_ok(){
+void io_async_exchange_ok() {
     G_io_apdu_buffer[0] = 0x90;
     G_io_apdu_buffer[1] = 0x00;
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
+
 
 void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                    volatile unsigned int *tx) {
@@ -285,28 +297,20 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
     ctx->flags = flags;
     ctx->tx = tx;
 
-    // screen_printf("handleSignTxn | dataLength: %d\n", ctx->dataLength); 
 
     if (!ctx->initialized) {
         cx_sha256_init(&ctx->hash);
         ctx->txn_state = TXN_START_IN;
         ctx->initialized = true;
         ctx->offset = 0;
+//        go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
+//        *ctx->flags |= IO_ASYNCH_REPLY;
+    } else {
 
-        go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
-        *ctx->flags |= IO_ASYNCH_REPLY;
-
-        return;
     }
-
-
-    parseTxn(ctx->dataBuffer, &(ctx->dataLength), ctx->tx, ctx->flags);
-    
-    // if((*ctx->flags & IO_ASYNCH_REPLY) != 0){
-    //     // screen_printf("io_async_exchange_ok\n");
-    
-    io_async_exchange_ok();
-    
+    if (parseTxn(dataBuffer, &dataLength, tx, flags)) {
+        THROW(INS_RET_SUCCESS);
+    }
     // } else {
     //     // screen_printf("THROW(INS_RET_SUCCESS)\n");
     //     THROW(INS_RET_SUCCESS);

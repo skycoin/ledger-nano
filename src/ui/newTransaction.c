@@ -12,8 +12,9 @@ const bagl_element_t bagl_custom_text[] = {
 // Handler for buttons pressed action
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:           
-            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx, global.signTxnContext.flags);
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
+            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx,
+                     global.signTxnContext.flags);
 
             if (!global.signTxnContext.dataLength) {
                 screen_printf("custom text screen : response OK\n");
@@ -57,9 +58,9 @@ unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, un
     switch (button_mask) {
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
             screen_printf("confirmation: NO \n");
-            
+
             UX_MENU_DISPLAY(0, menu_main, NULL);
-            
+
             // TODO: Return Error, that txn failed
             // TODO: cancel the whole signing process 
             break;
@@ -68,14 +69,20 @@ unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, un
             screen_printf("confirmation: YES \n");
 //            global.signTxnContext.is_approved = true;
 //            UX_MENU_DISPLAY(0, menu_main, NULL);
-            
-            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx, global.signTxnContext.flags);
-            if (!global.signTxnContext.dataLength) {
-                screen_printf("output : response OK\n");
-                io_async_exchange_ok();
-            }
 
-            ui_idle(); // TODO: show loading screen here
+//            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx,
+//                     global.signTxnContext.flags);
+//            if (!global.signTxnContext.dataLength) {
+            screen_printf("output : response OK\n");
+//                io_async_exchange_ok();
+            volatile unsigned int *tx = global.signTxnContext.tx;
+            G_io_apdu_buffer[(*tx)++] = 0x90;
+            G_io_apdu_buffer[(*tx)++] = 0x00;
+            io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, *tx);
+//            UX_MENU_DISPLAY(0, menu_main, NULL);
+//            ui_idle(); // TODO: show loading screen here
+//            }
+
 
             // TODO: go to the another output or finish with that if no any more
             break;
