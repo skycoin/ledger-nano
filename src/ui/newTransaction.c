@@ -12,18 +12,41 @@ const bagl_element_t bagl_custom_text[] = {
 // Handler for buttons pressed action
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
-            parseTxn(global.signTxnContext.dataBuffer, &global.signTxnContext.dataLength, global.signTxnContext.tx,
-                     global.signTxnContext.flags);
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
+            ui_idle();
+            break;
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: {
 
-            if (!global.signTxnContext.dataLength) {
-                screen_printf("custom text screen : response OK\n");
-                io_async_exchange_ok();
+            signTxnContext_t *ctx = &global.signTxnContext;
+
+            os_memmove(global.transactionContext.custom_text_line_1, "Transaction\0", 12);
+            os_memmove(global.transactionContext.custom_text_line_2, "processing\0", 11);
+
+            if (!ctx->initialized) {
+                cx_sha256_init(&ctx->hash);
+                ctx->txn_state = TXN_START_IN;
+                ctx->initialized = true;
+                ctx->offset = 0;
             }
 
-            ui_idle(); // TODO: show loading screen here
+            switch (txn_next_elem(ctx)) {
+                case TXN_PARTIAL:
+                    screen_printf("need new data\n");
+                    io_async_exchange_ok();
+                    break;
+                case TXN_READY:
+                    screen_printf("is ready\n");
+                    ctx->initialized = false;
+                    break;
+                case TXN_ERROR:
+                    ctx->initialized = false;
+                    io_exchange_with_code(0x6B00, *ctx->tx);
+                    break;
+            }
 
+            UX_REDISPLAY()
             break;
+        }
     }
 
     return 0;
@@ -62,7 +85,7 @@ unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, un
             UX_MENU_DISPLAY(0, menu_main, NULL);
 
             // TODO: Return Error, that txn failed
-            // TODO: cancel the whole signing process 
+            // TODO: cancel the whole signing process
             break;
 
         case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
@@ -75,10 +98,11 @@ unsigned int bagl_output_confirmation_screen_button(unsigned int button_mask, un
 //            if (!global.signTxnContext.dataLength) {
             screen_printf("output : response OK\n");
 //                io_async_exchange_ok();
-            volatile unsigned int *tx = global.signTxnContext.tx;
-            G_io_apdu_buffer[(*tx)++] = 0x90;
-            G_io_apdu_buffer[(*tx)++] = 0x00;
-            io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, *tx);
+//            volatile unsigned int *tx = global.signTxnContext.tx;
+//            G_io_apdu_buffer[(*tx)++] = 0x90;
+//            G_io_apdu_buffer[(*tx)++] = 0x00;
+//            io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, *tx);
+            io_async_exchange_ok(*global.signTxnContext.tx);
 //            UX_MENU_DISPLAY(0, menu_main, NULL);
 //            ui_idle(); // TODO: show loading screen here
 //            }
@@ -113,7 +137,7 @@ unsigned int output_confirmation_screen_prepro(const bagl_element_t *element) {
 
         current_offset += direction;
 
-        // firstly we update current_offset, then wait and after that copy and change the string 
+        // firstly we update current_offset, then wait and after that copy and change the string
         // so check equality with -1, but not with 0
         // the same with (current_offset + SCREEN_MAX_CHARS) and strlen
         if (current_offset == -1 ||
@@ -143,7 +167,7 @@ void prepare_current_output_for_display() {
 }
 
 void show_output_confirmation() {
-    // initialize variables for updating the UI each interval 
+    // initialize variables for updating the UI each interval
     ux_step = 0;
     ux_step_count = 4;
 
