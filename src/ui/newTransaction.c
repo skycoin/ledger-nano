@@ -5,7 +5,13 @@
 // UI struct for screen with custom screen (e.g. You got new TX)
 const bagl_element_t bagl_custom_text[] = {
         UI_BACKGROUND(),
-        UI_TEXT(0x83, 15, 12, 100, global.transactionContext.custom_text_line_1),
+
+        UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_CROSS),
+        UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_CHECK),
+
+        UI_TEXT_CUSTOM_FONT(0x11, 4, 10, 20, global.transactionContext.current_output_display, BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_LEFT),
+
+        UI_TEXT(0x80, 15, 12, 100, global.transactionContext.custom_text_line_1),
         UI_TEXT(0x83, 15, 27, 100, global.transactionContext.custom_text_line_2)
 };
 
@@ -13,21 +19,35 @@ const bagl_element_t bagl_custom_text[] = {
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
+            screen_printf("left\n");
+
             ui_idle();
             break;
         case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: {
+            screen_printf("right\n");
 
             signTxnContext_t *ctx = &global.signTxnContext;
 
             os_memmove(global.transactionContext.custom_text_line_1, "Transaction\0", 12);
             os_memmove(global.transactionContext.custom_text_line_2, "processing\0", 11);
 
+            screen_printf("\ninitialized %d\n\n", ctx->initialized);
+            // go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
+
             if (!ctx->initialized) {
+                screen_printf("!ctx->initialized \n");
+
                 cx_sha256_init(&ctx->hash);
+
+                screen_printf("state: %d\n", global.signTxnContext.txn_state);
                 ctx->txn_state = TXN_START_IN;
+                screen_printf("state: %d\n", global.signTxnContext.txn_state);
+
                 ctx->initialized = true;
                 ctx->offset = 0;
             }
+
+            screen_printf("state: %d\n", global.signTxnContext.txn_state);
 
             switch (txn_next_elem(ctx)) {
                 case TXN_PARTIAL:
@@ -52,6 +72,56 @@ unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int butt
     return 0;
 }
 
+unsigned int custom_screen_prepro(const bagl_element_t *element) {
+    // 83 -> out_address_or_amount line1
+    // 80 -> info_line line2
+    if(global.signTxnContext.txn_state == TXN_OUT){
+        if (element->component.userid == 0x80) { // info line
+            strcpy(element->text, "Address:\0");
+
+            if (current_offset == -1) {
+                strcpy(element->text, "SKY:\0");
+                UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY * 3);
+            } else {
+                UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+            }
+        }
+
+        if (element->component.userid == 0x83) { // description line (out_address_or_amount)
+            strcpy(element->text, global.transactionContext.out_address + current_offset);
+            ((char *) element->text)[SCREEN_MAX_CHARS] = '\0';
+
+            current_offset += direction;
+
+            // firstly we update current_offset, then wait and after that copy and change the string
+            // so check equality with -1, but not with 0
+            // the same with (current_offset + SCREEN_MAX_CHARS) and strlen
+            if (current_offset == -1 ||
+                (current_offset + SCREEN_MAX_CHARS == (strlen(global.transactionContext.out_address) + 1))) {
+                direction *= -1;
+
+                if (direction == 1) { // change text to the amount of skycoins and wait much longer
+                    strcpy(element->text, global.transactionContext.amount);
+                    UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY * 3);
+                } else {
+                    UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY); // wait more if we change direction
+                }
+            } else {
+                UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+            }
+        }
+    } else { // it should be just a plain text screen, so hide icons
+        if (element->component.userid == 0x01 || element->component.userid == 0x02) { // left icon
+            // screen_printf("icon\n");   
+            return NULL;
+        } else {
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+        }
+    }
+
+    return 1;
+}
+
 void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size, unsigned char *second_line,
                               unsigned int second_size) {
     if (first_line)
@@ -60,7 +130,30 @@ void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size
     if (second_line)
         os_memmove(global.transactionContext.custom_text_line_2, second_line, MIN(second_size, SCREEN_MAX_CHARS));
 
-    UX_DISPLAY(bagl_custom_text, NULL);
+    // initialize variables for updating the UI each interval
+    ux_step = 0;
+    ux_step_count = 4;
+
+    // Initialize variables for working with scrolling text
+    current_offset = 0;
+    direction = 1;
+
+    os_memmove(global.transactionContext.out_address, "12345678976543234567876543\0", 27);
+    os_memmove(global.transactionContext.amount, "123.45\0", 7);
+
+    os_memmove(global.transactionContext.info_line, "Address\0", 8);
+    os_memmove(global.transactionContext.out_address_or_amount, &global.transactionContext.out_address, SCREEN_MAX_CHARS);
+
+    global.transactionContext.current_output = 1;
+    global.transactionContext.total_outputs = 5;
+
+    if(global.signTxnContext.txn_state == TXN_OUT){
+        prepare_current_output_for_display();
+    } else {
+        os_memmove(global.transactionContext.current_output_display, "\0", 1);   
+    }
+
+    UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
 }
 
 

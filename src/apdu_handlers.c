@@ -310,7 +310,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
     if (!ctx->initialized) {
         go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
     } else {
-        UX_DISPLAY(bagl_custom_text, NULL);
+        UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
     }
     *ctx->flags |= IO_ASYNCH_REPLY;
 }
