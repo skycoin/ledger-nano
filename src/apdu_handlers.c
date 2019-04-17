@@ -294,23 +294,54 @@ void io_exchange_with_code(uint16_t code, uint16_t tx) {
 }
 
 void io_async_exchange_ok() {
-    io_exchange_with_code(0x9000, 0);
+    io_exchange_with_code(INS_RET_SUCCESS, *ctx->tx);
+}
+
+void io_async_exchange_error() {
+    io_exchange_with_code(0x6B0, 0);
 }
 
 
 void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                    volatile unsigned int *tx) {
 
-    screen_printf("\n    Start handler %d\n\n", ctx->initialized);
+    screen_printf("\n    Start handler %d\n", ctx->initialized);
     ctx->dataBuffer = dataBuffer;
     ctx->dataLength = dataLength;
     ctx->flags = flags;
     ctx->tx = tx;
+    *tx = 0;
+    screen_printf("    Start tx %d\n\n", *ctx->tx);
 
     if (!ctx->initialized) {
         go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
     } else {
-        UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
+        if (ctx->txn_state < TXN_START_OUT || ctx->txn_state == TXN_RET_SIGS) {
+            switch (txn_next_elem(ctx)) {
+                case TXN_ERROR:
+                    ctx->initialized = false;
+                    io_async_exchange_error();
+                    break;
+                case TXN_OUT:
+                    screen_printf("need to approve\n");
+                    os_memmove(global.transactionContext.custom_text_line_1, "Some skycoin\0", 13);
+                    os_memmove(global.transactionContext.custom_text_line_2, "coins\0", 6);
+                    UX_DISPLAY(bagl_custom_text, NULL);
+                    break;
+                case TXN_PARTIAL:
+                    io_async_exchange_ok();
+                    break;
+                case TXN_FINISHED:
+                    io_async_exchange_ok();
+                    ui_idle();
+                    ctx->initialized = false;
+                    break;
+                default:
+                    io_async_exchange_ok();
+            }
+        } else {
+            UX_DISPLAY(bagl_custom_text, NULL);
+        }
     }
     *ctx->flags |= IO_ASYNCH_REPLY;
 }
