@@ -11,9 +11,40 @@ const bagl_element_t bagl_custom_text[] = {
 
         UI_TEXT_CUSTOM_FONT(0x11, 4, 10, 20, global.transactionContext.current_output_display, BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_LEFT),
 
-        UI_TEXT(0x80, 15, 12, 100, global.transactionContext.custom_text_line_1),
-        UI_TEXT(0x83, 15, 27, 100, global.transactionContext.custom_text_line_2)
+        UI_TEXT(0x83, 23, 30, 85, global.transactionContext.custom_text_line_2),
+        UI_TEXT(0x80, 20, 12, 88, global.transactionContext.custom_text_line_1)
 };
+
+void approve_output() {
+    signTxnContext_t *ctx = &global.signTxnContext;
+
+    screen_printf("need to approve\n");
+    
+    global.transactionContext.total_outputs = ctx->txn.out_num;
+    global.transactionContext.current_output = ctx->curr_obj;
+    prepare_current_output_for_display();
+
+    screen_printf("current_output_display: %s\n", global.transactionContext.current_output_display);
+
+    char address[36];
+    txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj - 1];
+    address_to_base58(cur_out->address, address);
+    os_memmove(global.transactionContext.out_address, address, strlen(address)+1);
+
+    screen_printf("address: %s\n", global.transactionContext.out_address);
+
+    char tmp_amount[SCREEN_MAX_CHARS];
+    SPRINTF(tmp_amount, "%d.%d", ctx->txn.outputs[ctx->curr_obj - 1].coin_num / 1000, ctx->txn.outputs[ctx->curr_obj - 1].coin_num % 1000);
+    os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount)+1);
+
+    screen_printf("amount: %s\n", global.transactionContext.amount);
+    
+
+    // os_memmove(global.transactionContext.info_line, "Address\0", 8);
+    // os_memmove(global.transactionContext.out_address_or_amount, global.transactionContext.out_address, 27);
+
+    screen_printf("5\n");
+}
 
 // Handler for buttons pressed action
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
@@ -23,6 +54,7 @@ unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int butt
 
             ui_idle();
             break;
+        case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
         case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: {
             screen_printf("right\n");
 
@@ -55,14 +87,10 @@ unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int butt
                     io_async_exchange_ok();
                     break;
                 case TXN_OUT:
-                    screen_printf("need to approve\n");
-                    os_memmove(global.transactionContext.custom_text_line_1, "Some skycoin\0", 13);
-                    os_memmove(global.transactionContext.custom_text_line_2, "coins\0", 6);
+                    approve_output();
                     break;
                 case TXN_PARTIAL_OUT:
-                    screen_printf("need to approve\n");
-                    os_memmove(global.transactionContext.custom_text_line_1, "Some skycoin\0", 13);
-                    os_memmove(global.transactionContext.custom_text_line_2, "coins\0", 6);
+                    approve_output();
                     io_async_exchange_ok();
                     break;
                 case TXN_READY:
@@ -142,7 +170,7 @@ unsigned int custom_screen_prepro(const bagl_element_t *element) {
         }
 
         if (element->component.userid == 0x83) { // description line (out_address_or_amount)
-            strcpy(element->text, global.transactionContext.out_address + current_offset);
+            os_memcpy(element->text, global.transactionContext.out_address + current_offset, SCREEN_MAX_CHARS - 1);
             ((char *) element->text)[SCREEN_MAX_CHARS] = '\0';
 
             current_offset += direction;
@@ -164,6 +192,9 @@ unsigned int custom_screen_prepro(const bagl_element_t *element) {
                 UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
             }
         }
+
+        // prepare_current_output_for_display();
+
     } else { // it should be just a plain text screen, so hide icons
         if (element->component.userid == 0x01 || element->component.userid == 0x02) { // left icon
             // screen_printf("icon\n");   
@@ -310,7 +341,7 @@ void prepare_current_output_for_display() {
     char tmp[SCREEN_MAX_CHARS];
     SPRINTF(tmp, "%d/%d", global.transactionContext.current_output, global.transactionContext.total_outputs);
 
-    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp));
+    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp)+1);
 }
 
 void show_output_confirmation() {
