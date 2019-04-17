@@ -107,6 +107,12 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
                 } else {
                     cx_hash(&ctx->hash.header, 0, ctx->buffer, 37, NULL);
                 }
+                if (ctx->offset + *dataLength < 37 && ctx->txn_state != TXN_READY) {
+                    save_data_to_buffer(&dataBuffer, dataLength);
+                    THROW(TXN_PARTIAL_OUT);
+                } else {
+                    THROW(TXN_OUT);
+                }
             }
             break;
         }
@@ -155,29 +161,20 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
         }
         case TXN_RET_SIGS: {
 //                screen_printf("\n Transaction is valid\n");
-            int offset = ctx->curr_obj == 0 ? SHA256_HASH_LEN : 0;
+//            int offset = 0; //ctx->curr_obj == 0 ? SHA256_HASH_LEN : 0;
             while (ctx->curr_obj != ctx->txn.in_num) {
-                if (offset + SIG_LEN > 255) {
-                    THROW(0x6199);
+                if (*ctx->tx + SIG_LEN > 255) {
+                    THROW(TXN_PARTIAL);
+                } else {
+                    os_memmove(G_io_apdu_buffer + *ctx->tx,
+                               ctx->txn.sig_input[ctx->curr_obj++].signature,
+                               SIG_LEN);
+                    *ctx->tx += SIG_LEN;
+//                    offset += SIG_LEN;
                 }
-                os_memmove(G_io_apdu_buffer + offset,
-                           ctx->txn.sig_input[ctx->curr_obj++].signature,
-                           SIG_LEN);
-                *tx += SIG_LEN;
-                offset += SIG_LEN;
             }
             ctx->initialized = false;
-            ctx->tx = tx;
-            show_output_confirmation();
-            *flags |= IO_ASYNCH_REPLY;
-//                THROW(INS_RET_SUCCESS);
-            break;
-        }
-        case TXN_ERROR: {
-//                screen_printf("Transaction is invalid\n");
-            THROW(TXN_ERROR);
-            ctx->initialized = false;
-            THROW(0x6B00);
+            THROW(TXN_FINISHED);
             break;
         }
     }

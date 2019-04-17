@@ -3,6 +3,7 @@
 
 #include "ui/newTransaction.h"
 #include "skycoin-api/skycoin_crypto.h"
+#include "skycoin-api/txn.h"
 #include "ux.h"
 
 #include "os.h"
@@ -75,6 +76,8 @@ void save_data_to_buffer(uint8_t **dataBuffer, uint16_t *dataLength);
 void io_exchange_with_code(uint16_t code, uint16_t tx);
 
 void io_async_exchange_ok();
+
+void io_async_exchange_error();
 
 #endif //SKYCOIN_APDU_HANDLERS_H
 

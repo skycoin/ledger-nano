@@ -65,13 +65,15 @@ typedef struct {
 
 typedef enum {
     TXN_PARTIAL = 1,
+    TXN_PARTIAL_OUT,
     TXN_START_IN,
     TXN_IN,
     TXN_START_OUT,
     TXN_OUT,
     TXN_READY,
     TXN_RET_SIGS,
-    TXN_ERROR
+    TXN_ERROR,
+    TXN_FINISHED
 } txn_state_t;
 
 //=========================
