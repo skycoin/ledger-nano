@@ -9,7 +9,8 @@ const bagl_element_t bagl_custom_text[] = {
         UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_CROSS),
         UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_CHECK),
 
-        UI_TEXT_CUSTOM_FONT(0x11, 4, 10, 20, global.transactionContext.current_output_display, BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_LEFT),
+        UI_TEXT_CUSTOM_FONT(0x11, 4, 10, 20, global.transactionContext.current_output_display,
+                            BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_LEFT),
 
         UI_TEXT(0x83, 23, 30, 85, global.transactionContext.custom_text_line_2),
         UI_TEXT(0x80, 20, 12, 88, global.transactionContext.custom_text_line_1)
@@ -19,7 +20,7 @@ void approve_output() {
     signTxnContext_t *ctx = &global.signTxnContext;
 
     screen_printf("need to approve\n");
-    
+
     global.transactionContext.total_outputs = ctx->txn.out_num;
     global.transactionContext.current_output = ctx->curr_obj;
     prepare_current_output_for_display();
@@ -29,17 +30,22 @@ void approve_output() {
     char address[36];
     txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj - 1];
     address_to_base58(cur_out->address, address);
-    os_memmove(global.transactionContext.out_address, address, strlen(address)+1);
+    os_memmove(global.transactionContext.out_address, address, strlen(address) + 1);
 
     screen_printf("address: %s\n", global.transactionContext.out_address);
 
     char tmp_amount[SCREEN_MAX_CHARS];
-    SPRINTF(tmp_amount, "%d.%d", ctx->txn.outputs[ctx->curr_obj - 1].coin_num / 1000, ctx->txn.outputs[ctx->curr_obj - 1].coin_num % 1000);
-    os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount)+1);
+    SPRINTF(tmp_amount, "%d.%d", ctx->txn.outputs[ctx->curr_obj - 1].coin_num / 1000,
+            ctx->txn.outputs[ctx->curr_obj - 1].coin_num % 1000);
+    os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount) + 1);
 
     screen_printf("amount: %s\n", global.transactionContext.amount);
-    
 
+
+    if (ctx->curr_obj == ctx->txn.out_num) {
+        ctx->txn_state = TXN_READY;
+        ctx->curr_obj = 0;
+    }
     // os_memmove(global.transactionContext.info_line, "Address\0", 8);
     // os_memmove(global.transactionContext.out_address_or_amount, global.transactionContext.out_address, 27);
 
@@ -96,7 +102,6 @@ unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int butt
                 case TXN_READY:
                     screen_printf("is ready\n");
 //                screen_printf("Transaction is valid\n");
-
 //                PRINTF("Inner hash %.*h\n", SHA256_HASH_LEN, ctx->txn.inner_hash);
                     os_memmove(G_io_apdu_buffer, ctx->txn.inner_hash, SHA256_HASH_LEN);
                     *ctx->tx += SHA256_HASH_LEN;
@@ -118,7 +123,7 @@ unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int butt
                         derive_keypair(global.getPublicKeyContext.bip44_path, &private_key, NULL);
 
                         sign(&private_key, sig_hash, ctx->txn.sig_input[i].signature);
-
+                        ctx->curr_obj += 1;
 //                    PRINTF("    Signature %.*h\n\n", SIG_LEN, ctx->txn.sig_input[i].signature);
                     }
                     global.getPublicKeyContext.bip44_path[4] = old_bip44;
@@ -157,7 +162,7 @@ unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int butt
 unsigned int custom_screen_prepro(const bagl_element_t *element) {
     // 83 -> out_address_or_amount line1
     // 80 -> info_line line2
-    if(global.signTxnContext.txn_state == TXN_OUT){
+    if (global.signTxnContext.txn_state == TXN_OUT) {
         if (element->component.userid == 0x80) { // info line
             strcpy(element->text, "Address:\0");
 
@@ -196,11 +201,36 @@ unsigned int custom_screen_prepro(const bagl_element_t *element) {
         // prepare_current_output_for_display();
 
     } else { // it should be just a plain text screen, so hide icons
-        if (element->component.userid == 0x01 || element->component.userid == 0x02) { // left icon
-            // screen_printf("icon\n");   
-            return NULL;
+        if (global.signTxnContext.txn_state == TXN_READY) {
+            if (global.signTxnContext.curr_obj == 0) {
+                os_memmove(global.transactionContext.custom_text_line_1, "Approve\0", 8);
+                os_memmove(global.transactionContext.custom_text_line_2, "transaction\0", 12);
+
+                if (element->component.userid == 0x11) {
+                    return NULL;
+                } else {
+                    UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+                }
+            } else {
+
+                os_memmove(global.transactionContext.custom_text_line_1, "Transaction\0", 12);
+                os_memmove(global.transactionContext.custom_text_line_2, "is signing...\0", 14);
+
+                if (element->component.userid == 0x01 || element->component.userid == 0x02 ||
+                    element->component.userid == 0x11) {
+                    return NULL;
+                } else {
+                    UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+                }
+
+            }
         } else {
-            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+            if (element->component.userid == 0x01 || element->component.userid == 0x02 ||
+                element->component.userid == 0x11) {
+                return NULL;
+            } else {
+                UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+            }
         }
     }
 
@@ -227,15 +257,16 @@ void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size
     os_memmove(global.transactionContext.amount, "123.45\0", 7);
 
     os_memmove(global.transactionContext.info_line, "Address\0", 8);
-    os_memmove(global.transactionContext.out_address_or_amount, &global.transactionContext.out_address, SCREEN_MAX_CHARS);
+    os_memmove(global.transactionContext.out_address_or_amount, &global.transactionContext.out_address,
+               SCREEN_MAX_CHARS);
 
     global.transactionContext.current_output = 1;
     global.transactionContext.total_outputs = 5;
 
-    if(global.signTxnContext.txn_state == TXN_OUT){
+    if (global.signTxnContext.txn_state == TXN_OUT) {
         prepare_current_output_for_display();
     } else {
-        os_memmove(global.transactionContext.current_output_display, "\0", 1);   
+        os_memmove(global.transactionContext.current_output_display, "\0", 1);
     }
 
     UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
@@ -341,7 +372,7 @@ void prepare_current_output_for_display() {
     char tmp[SCREEN_MAX_CHARS];
     SPRINTF(tmp, "%d/%d", global.transactionContext.current_output, global.transactionContext.total_outputs);
 
-    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp)+1);
+    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp) + 1);
 }
 
 void show_output_confirmation() {
