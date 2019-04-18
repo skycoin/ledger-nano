@@ -16,6 +16,7 @@ extern const bagl_element_t bagl_custom_text[6];
 // ...
 extern const bagl_element_t bagl_output_confirmation_screen[6];
 
+void prepare_output_approval();
 
 // Handler for buttons pressed action
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter);
