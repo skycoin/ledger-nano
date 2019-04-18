@@ -16,36 +16,28 @@ const bagl_element_t bagl_custom_text[] = {
         UI_TEXT(0x80, 20, 12, 88, global.transactionContext.custom_text_line_1)
 };
 
-void prepare_current_output_for_display() {
-    os_memset(global.transactionContext.current_output_display, 0, SCREEN_MAX_CHARS);
-    char tmp[SCREEN_MAX_CHARS];
-    SPRINTF(tmp, "%d/%d", global.transactionContext.current_output, global.transactionContext.total_outputs);
-
-    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp) + 1);
-}
-
 void prepare_output_approval() {
-
-    screen_printf("need to approve\n");
-
+    screen_printf("Preparing data for output approval screen\n");
     signTxnContext_t *ctx = &global.signTxnContext;
-    global.transactionContext.total_outputs = ctx->txn.out_num;
-    global.transactionContext.current_output = ctx->curr_obj;
-    prepare_current_output_for_display();
 
+    // current output (e.g. "1/6")
+    os_memset(global.transactionContext.current_output_display, 0, SCREEN_MAX_CHARS);
+    char tmp_cur_out[SCREEN_MAX_CHARS];
+    SPRINTF(tmp_cur_out, "%d/%d", ctx->curr_obj, ctx->txn.out_num);
+    os_memmove(global.transactionContext.current_output_display, tmp_cur_out, strlen(tmp_cur_out) + 1);
     screen_printf("current_output_display: %s\n", global.transactionContext.current_output_display);
 
+    // address
     char address[36];
     txn_output_t *cur_out = &ctx->txn.cur_output;
     address_to_base58(cur_out->address, address);
     os_memmove(global.transactionContext.out_address, address, strlen(address) + 1);
-
     screen_printf("address: %s\n", global.transactionContext.out_address);
 
+    // Amount of SKY to send
     char tmp_amount[SCREEN_MAX_CHARS];
     SPRINTF(tmp_amount, "%d.%d", cur_out->coin_num / 1000, cur_out->coin_num % 1000);
     os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount) + 1);
-
     screen_printf("amount: %s\n", global.transactionContext.amount);
 }
 

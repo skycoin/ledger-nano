@@ -29,13 +29,10 @@ typedef struct {
     char custom_text_line_1[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. " You received ")
     char custom_text_line_2[SCREEN_MAX_CHARS]; // text which will be displayed in custom_test_screen (e.g. "new transaction")
 
-    unsigned int total_outputs; // total number of outputs in transaction
     unsigned int current_output; // currently processed output
     char current_output_display[SCREEN_MAX_CHARS]; // only for UI
-    char info_line[SCREEN_MAX_CHARS];
     char out_address[36]; // output address(output)
-    char amount[SCREEN_MAX_CHARS]; // amount of coint to send
-    char out_address_or_amount[SCREEN_MAX_CHARS]; // output copy of address or amount(they will be changing each n second) to be then displayed as scrolling text (for UI needs only) 
+    char amount[SCREEN_MAX_CHARS]; // amount of coint to send 
 } transactionContext_t;
 
 //================================

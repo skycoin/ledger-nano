@@ -24,7 +24,4 @@ unsigned int custom_screen_prepro(const bagl_element_t *element);
 void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size, unsigned char *second_line,
                               unsigned int second_size);
 
-void prepare_current_output_for_display();
-
-
 #endif
