@@ -47,6 +47,7 @@ unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long bu
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
             screen_printf("Cancel TX signing process\n");
 
+            io_async_exchange_error();
             ui_idle();
             break;
 
