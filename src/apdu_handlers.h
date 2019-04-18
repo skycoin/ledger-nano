@@ -67,12 +67,6 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                    volatile unsigned int *tx);
 
-int parseTxn(uint8_t *dataBuffer, uint16_t *dataLength, volatile unsigned int *tx, volatile unsigned int *flags);
-
-void read_data_to_buffer(uint8_t **dataBuffer, uint16_t *dataLength, unsigned char buffer_size);
-
-void save_data_to_buffer(uint8_t **dataBuffer, uint16_t *dataLength);
-
 void io_exchange_with_code(uint16_t code, uint16_t tx);
 
 void io_async_exchange_ok();
