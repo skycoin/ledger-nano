@@ -16,6 +16,14 @@ const bagl_element_t bagl_custom_text[] = {
         UI_TEXT(0x80, 20, 12, 88, global.transactionContext.custom_text_line_1)
 };
 
+void prepare_current_output_for_display() {
+    os_memset(global.transactionContext.current_output_display, 0, SCREEN_MAX_CHARS);
+    char tmp[SCREEN_MAX_CHARS];
+    SPRINTF(tmp, "%d/%d", global.transactionContext.current_output, global.transactionContext.total_outputs);
+
+    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp) + 1);
+}
+
 void prepare_output_approval() {
 
     screen_printf("need to approve\n");
@@ -28,15 +36,14 @@ void prepare_output_approval() {
     screen_printf("current_output_display: %s\n", global.transactionContext.current_output_display);
 
     char address[36];
-    txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj - 1];
+    txn_output_t *cur_out = &ctx->txn.cur_output;
     address_to_base58(cur_out->address, address);
     os_memmove(global.transactionContext.out_address, address, strlen(address) + 1);
 
     screen_printf("address: %s\n", global.transactionContext.out_address);
 
     char tmp_amount[SCREEN_MAX_CHARS];
-    SPRINTF(tmp_amount, "%d.%d", ctx->txn.outputs[ctx->curr_obj - 1].coin_num / 1000,
-            ctx->txn.outputs[ctx->curr_obj - 1].coin_num % 1000);
+    SPRINTF(tmp_amount, "%d.%d", cur_out->coin_num / 1000, cur_out->coin_num % 1000);
     os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount) + 1);
 
     screen_printf("amount: %s\n", global.transactionContext.amount);
@@ -78,8 +85,6 @@ unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long bu
                     break;
                 case TXN_READY:
                     screen_printf("is ready\n");
-//                screen_printf("Transaction is valid\n");
-//                PRINTF("Inner hash %.*h\n", SHA256_HASH_LEN, ctx->txn.inner_hash);
                     os_memmove(G_io_apdu_buffer, ctx->txn.inner_hash, SHA256_HASH_LEN);
                     *ctx->tx += SHA256_HASH_LEN;
 
@@ -170,12 +175,4 @@ void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size
     direction = 1;
 
     UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
-}
-
-void prepare_current_output_for_display() {
-    os_memset(global.transactionContext.current_output_display, 0, SCREEN_MAX_CHARS);
-    char tmp[SCREEN_MAX_CHARS];
-    SPRINTF(tmp, "%d/%d", global.transactionContext.current_output, global.transactionContext.total_outputs);
-
-    os_memmove(global.transactionContext.current_output_display, tmp, strlen(tmp) + 1);
 }

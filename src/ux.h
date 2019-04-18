@@ -40,8 +40,7 @@ typedef struct {
 
 //================================
 // TXN
-#define MAX_INPUTS 9
-#define MAX_OUTPUTS 9
+#define MAX_INPUTS 20
 
 typedef struct {
     unsigned char address[21];
@@ -60,22 +59,26 @@ typedef struct {
     sig_input_t sig_input[MAX_INPUTS];
 
     unsigned int out_num;
-    txn_output_t outputs[MAX_OUTPUTS];
+    txn_output_t cur_output;
 } txn_t;
 
 typedef enum {
-    TXN_PARTIAL = 1,
-    TXN_PARTIAL_OUT,
     TXN_START_IN,
     TXN_IN,
     TXN_START_OUT,
     TXN_OUT,
-    TXN_READY,
     TXN_COMPUTE_SIGS,
-    TXN_RET_SIGS,
-    TXN_ERROR,
-    TXN_FINISHED
+    TXN_RET_SIGS
 } txn_state_t;
+
+typedef enum {
+    TXN_PARTIAL = 1,
+    TXN_PARTIAL_OUT,
+    TXN_APPROVE_OUT,
+    TXN_READY,
+    TXN_FINISHED,
+    TXN_ERROR
+} txn_ui_state_t;
 
 //=========================
 
@@ -93,7 +96,6 @@ typedef struct {
     uint8_t *dataBuffer;
     uint16_t dataLength;
     volatile unsigned int *tx;
-//    bool is_approved;
 } signTxnContext_t;
 
 typedef struct {

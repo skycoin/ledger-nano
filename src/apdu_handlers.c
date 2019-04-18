@@ -2,9 +2,6 @@
 
 #include "apdu_handlers.h"
 
-
-//#define U8LE(buf, off) (((uint64_t)(U4LE(buf, off + 4)) << 32) | ((uint64_t)(U4LE(buf, off))     & 0xFFFFFFFF))
-
 static signTxnContext_t *ctx = &global.signTxnContext;
 
 handler_fn_t *lookupHandler(uint8_t ins) {
@@ -63,7 +60,6 @@ void handleGetVersion(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags,
                         volatile unsigned int *tx) {
     cx_ecfp_public_key_t public_key;
-//    unsigned int bip44_path[BIP44_PATH_LEN];
 
     get_bip44_path(dataBuffer);
     derive_keypair(global.getPublicKeyContext.bip44_path, NULL, &public_key);
@@ -115,7 +111,6 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
     ctx->dataLength = dataLength;
     ctx->tx = tx;
     *tx = 0;
-    screen_printf("    Start tx %d\n\n", *ctx->tx);
 
     if (!ctx->initialized) {
         go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);

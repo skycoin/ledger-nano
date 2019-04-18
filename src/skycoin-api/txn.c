@@ -77,7 +77,7 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
             break;
         }
         case TXN_OUT: {
-            screen_printf("TXT_OUT dataLength: %d\n", ctx->dataLength);
+            screen_printf("\nTXT_OUT dataLength: %d\n", ctx->dataLength);
 
             if (ctx->curr_obj == ctx->txn.out_num) {
                 ctx->txn_state = TXN_READY;
@@ -91,7 +91,7 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
             } else {
                 read_data_to_buffer(37);
 
-                txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj];
+                txn_output_t *cur_out = &ctx->txn.cur_output;
                 os_memmove(cur_out->address, ctx->buffer, 21);
 
                 cur_out->coin_num = U8LE(ctx->buffer, 21);
@@ -110,17 +110,14 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
                     save_data_to_buffer();
                     THROW(TXN_PARTIAL_OUT);
                 } else {
-                    THROW(TXN_OUT);
+                    THROW(TXN_APPROVE_OUT);
                 }
             }
             break;
         }
         case TXN_COMPUTE_SIGS: {
-//                screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
             unsigned int old_bip44 = global.getPublicKeyContext.bip44_path[4];
             for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
-//                    PRINTF("    Input %.*h\n", SHA256_HASH_LEN, ctx->txn.sig_input[i].input);
-
                 static cx_sha256_t hash;
                 unsigned char sig_hash[SHA256_HASH_LEN];
                 cx_ecfp_private_key_t private_key;
@@ -137,16 +134,6 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
                 ctx->curr_obj += 1;
             }
             global.getPublicKeyContext.bip44_path[4] = old_bip44;
-//            screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
-//            for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
-//                char address[36];
-//                txn_output_t *cur_out = &ctx->txn.outputs[i];
-//                address_to_base58(cur_out->address, address);
-//                screen_printf("    Output address %s\n", address);
-//                screen_printf("    Number of coins %u\n", (unsigned long int) cur_out->coin_num);
-//                screen_printf("    Number of hours %u\n\n", (unsigned long int) cur_out->hour_num);
-//            }
-//            screen_printf("\n\n");
             ctx->curr_obj = 0;
             ctx->txn_state = TXN_RET_SIGS;
         }
@@ -168,14 +155,14 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
     }
 }
 
-txn_state_t txn_next_elem(signTxnContext_t *ctx) {
+txn_ui_state_t txn_next_elem(signTxnContext_t *ctx) {
     // Like many transaction decoders, we use exceptions to jump out of deep
     // call stacks when we encounter an error. There are two important rules
     // for Ledger exceptions: declare modified variables as volatile, and do
     // not THROW(0). Presumably, 0 is the sentinel value for "no exception
     // thrown." So be very careful when throwing enums, since enums start at 0
     // by default.
-    volatile txn_state_t result;
+    volatile txn_ui_state_t result;
     BEGIN_TRY{
             TRY{
                     // read until we reach a displayable element or the end of the buffer
