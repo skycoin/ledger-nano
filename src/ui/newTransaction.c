@@ -12,7 +12,7 @@ const bagl_element_t bagl_custom_text[] = {
         UI_TEXT_CUSTOM_FONT(0x11, 4, 10, 20, global.transactionContext.current_output_display,
                             BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_LEFT),
 
-        UI_TEXT(0x83, 23, 30, 85, global.transactionContext.custom_text_line_2),
+        UI_TEXT(0x83, 23, 27, 85, global.transactionContext.custom_text_line_2),
         UI_TEXT(0x80, 20, 12, 88, global.transactionContext.custom_text_line_1)
 };
 
@@ -259,15 +259,15 @@ void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size
     current_offset = 0;
     direction = 1;
 
-    os_memmove(global.transactionContext.out_address, "12345678976543234567876543\0", 27);
-    os_memmove(global.transactionContext.amount, "123.45\0", 7);
+    // os_memmove(global.transactionContext.out_address, "12345678976543234567876543\0", 27);
+    // os_memmove(global.transactionContext.amount, "123.45\0", 7);
 
-    os_memmove(global.transactionContext.info_line, "Address\0", 8);
-    os_memmove(global.transactionContext.out_address_or_amount, &global.transactionContext.out_address,
-               SCREEN_MAX_CHARS);
+    // os_memmove(global.transactionContext.info_line, "Address\0", 8);
+    // os_memmove(global.transactionContext.out_address_or_amount, &global.transactionContext.out_address,
+    //            SCREEN_MAX_CHARS);
 
-    global.transactionContext.current_output = 1;
-    global.transactionContext.total_outputs = 5;
+    // global.transactionContext.current_output = 1;
+    // global.transactionContext.total_outputs = 5;
 
     if (global.signTxnContext.txn_state == TXN_OUT) {
         prepare_current_output_for_display();
