@@ -16,7 +16,7 @@ const bagl_element_t bagl_custom_text[] = {
         UI_TEXT(0x80, 20, 12, 88, global.transactionContext.custom_text_line_1)
 };
 
-void approve_output() {
+void prepare_output_approval() {
     signTxnContext_t *ctx = &global.signTxnContext;
 
     screen_printf("need to approve\n");
@@ -53,16 +53,20 @@ void approve_output() {
 }
 
 // Handler for buttons pressed action
-unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
+unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long button_mask_counter) {
     switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
-            screen_printf("left\n");
+        case BUTTON_LEFT:
+        case BUTTON_EVT_FAST | BUTTON_LEFT:
+            screen_printf("Cancel TX signing process\n");
 
             ui_idle();
             break;
-        case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: {
-            screen_printf("right\n");
+
+        case BUTTON_RIGHT: 
+        case BUTTON_LEFT | BUTTON_RIGHT:
+        case BUTTON_EVT_FAST | BUTTON_RIGHT:
+        case BUTTON_EVT_FAST | BUTTON_LEFT | BUTTON_RIGHT: {
+            screen_printf("Right button was pressed\n");
 
             signTxnContext_t *ctx = &global.signTxnContext;
 
@@ -93,10 +97,10 @@ unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int butt
                     io_async_exchange_ok();
                     break;
                 case TXN_OUT:
-                    approve_output();
+                    prepare_output_approval();
                     break;
                 case TXN_PARTIAL_OUT:
-                    approve_output();
+                    prepare_output_approval();
                     io_async_exchange_ok();
                     break;
                 case TXN_READY:
@@ -177,6 +181,8 @@ unsigned int custom_screen_prepro(const bagl_element_t *element) {
         if (element->component.userid == 0x83) { // description line (out_address_or_amount)
             os_memcpy(element->text, global.transactionContext.out_address + current_offset, SCREEN_MAX_CHARS - 1);
             ((char *) element->text)[SCREEN_MAX_CHARS] = '\0';
+
+            screen_printf("element->text: %s\n", element->text);
 
             current_offset += direction;
 
