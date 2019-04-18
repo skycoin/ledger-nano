@@ -316,44 +316,14 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
     if (!ctx->initialized) {
         go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
     } else {
-        if (ctx->txn_state < TXN_START_OUT || ctx->txn_state == TXN_RET_SIGS) {
+        if (ctx->txn_state < TXN_START_OUT || ctx->txn_state == TXN_RET_SIGS || ctx->txn_state == TXN_COMPUTE_SIGS) {
             switch (txn_next_elem(ctx)) {
                 case TXN_ERROR:
                     ctx->initialized = false;
                     io_async_exchange_error();
                     break;
                 case TXN_OUT:
-
                     prepare_output_approval();
-                    
-                    // screen_printf("need to approve\n");
-                    
-                    // global.transactionContext.total_outputs = ctx->txn.out_num;
-                    // global.transactionContext.current_output = ctx->curr_obj;
-                    // prepare_current_output_for_display();
-
-                    // screen_printf("current_output_display: %s\n", global.transactionContext.current_output_display);
-
-                    // char address[36];
-                    // txn_output_t *cur_out = &ctx->txn.outputs[ctx->curr_obj -1];
-                    // address_to_base58(cur_out->address, address);
-                    // os_memmove(global.transactionContext.out_address, address, strlen(address)+1);
-
-                    // screen_printf("address: %s\n", global.transactionContext.out_address);
-
-                    // char tmp_amount[SCREEN_MAX_CHARS];
-                    // SPRINTF(tmp_amount, "%d.%d", ctx->txn.outputs[ctx->curr_obj - 1].coin_num / 1000, ctx->txn.outputs[ctx->curr_obj - 1].coin_num % 1000);
-                    // os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount)+1);
-
-                    // screen_printf("amount: %s\n", global.transactionContext.amount);
-                    
-
-                    // // os_memmove(global.transactionContext.info_line, "Address\0", 8);
-                    // // os_memmove(global.transactionContext.out_address_or_amount, global.transactionContext.out_address, 27);
-
-                    // screen_printf("5\n");
-
-                    // os_memmove(global.transactionContext.custom_text_line_2, "coins\0", 6);
                     UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
                     break;
                 case TXN_PARTIAL:

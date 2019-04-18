@@ -42,10 +42,10 @@ void prepare_output_approval() {
     screen_printf("amount: %s\n", global.transactionContext.amount);
 
 
-    if (ctx->curr_obj == ctx->txn.out_num) {
-        ctx->txn_state = TXN_READY;
-        ctx->curr_obj = 0;
-    }
+//    if (ctx->curr_obj == ctx->txn.out_num) {
+//        ctx->txn_state = TXN_READY;
+//        ctx->curr_obj = 0;
+//    }
     // os_memmove(global.transactionContext.info_line, "Address\0", 8);
     // os_memmove(global.transactionContext.out_address_or_amount, global.transactionContext.out_address, 27);
 
@@ -55,23 +55,20 @@ void prepare_output_approval() {
 // Handler for buttons pressed action
 unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long button_mask_counter) {
     switch (button_mask) {
-        case BUTTON_LEFT:
-        case BUTTON_EVT_FAST | BUTTON_LEFT:
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
             screen_printf("Cancel TX signing process\n");
 
             ui_idle();
             break;
 
-        case BUTTON_RIGHT: 
-        case BUTTON_LEFT | BUTTON_RIGHT:
-        case BUTTON_EVT_FAST | BUTTON_RIGHT:
-        case BUTTON_EVT_FAST | BUTTON_LEFT | BUTTON_RIGHT: {
+        case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: {
             screen_printf("Right button was pressed\n");
 
             signTxnContext_t *ctx = &global.signTxnContext;
 
             os_memmove(global.transactionContext.custom_text_line_1, "Transaction\0", 12);
-            os_memmove(global.transactionContext.custom_text_line_2, "processing\0", 11);
+            os_memmove(global.transactionContext.custom_text_line_2, "processing...\0", 14);
 
             screen_printf("\ninitialized %d\n\n", ctx->initialized);
             // go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
@@ -109,43 +106,8 @@ unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long bu
 //                PRINTF("Inner hash %.*h\n", SHA256_HASH_LEN, ctx->txn.inner_hash);
                     os_memmove(G_io_apdu_buffer, ctx->txn.inner_hash, SHA256_HASH_LEN);
                     *ctx->tx += SHA256_HASH_LEN;
-//                screen_printf("\nNumber of inputs %u\n", ctx->txn.in_num);
-                    unsigned int old_bip44 = global.getPublicKeyContext.bip44_path[4];
-                    for (unsigned int i = 0; i < ctx->txn.in_num; i++) {
-//                    PRINTF("    Input %.*h\n", SHA256_HASH_LEN, ctx->txn.sig_input[i].input);
 
-                        static cx_sha256_t hash;
-                        unsigned char sig_hash[SHA256_HASH_LEN];
-                        cx_ecfp_private_key_t private_key;
-
-                        cx_sha256_init(&hash);
-                        cx_hash(&hash.header, 0, ctx->txn.inner_hash, SHA256_HASH_LEN, NULL);
-                        cx_hash(&hash.header, CX_LAST, ctx->txn.sig_input[i].input, SHA256_HASH_LEN, sig_hash);
-
-                        unsigned int new_bip44 = U4LE(ctx->txn.sig_input[i].input, 32);
-                        global.getPublicKeyContext.bip44_path[4] = new_bip44;
-                        derive_keypair(global.getPublicKeyContext.bip44_path, &private_key, NULL);
-
-                        sign(&private_key, sig_hash, ctx->txn.sig_input[i].signature);
-                        ctx->curr_obj += 1;
-//                    PRINTF("    Signature %.*h\n\n", SIG_LEN, ctx->txn.sig_input[i].signature);
-                    }
-                    global.getPublicKeyContext.bip44_path[4] = old_bip44;
-                    screen_printf("\nNumber of outputs %u\n", ctx->txn.out_num);
-                    for (unsigned int i = 0; i < ctx->txn.out_num; i++) {
-                        char address[36];
-                        txn_output_t *cur_out = &ctx->txn.outputs[i];
-                        address_to_base58(cur_out->address, address);
-                        screen_printf("    Output address %s\n", address);
-                        screen_printf("    Number of coins %u\n", (unsigned long int) cur_out->coin_num);
-                        screen_printf("    Number of hours %u\n\n", (unsigned long int) cur_out->hour_num);
-                    }
-                    screen_printf("\n\n");
-                    ctx->curr_obj = 0;
-                    ctx->txn_state = TXN_RET_SIGS;
-
-                    os_memmove(global.transactionContext.custom_text_line_1, "Transaction\0", 12);
-                    os_memmove(global.transactionContext.custom_text_line_2, "signed\0", 7);
+                    ctx->txn_state = TXN_COMPUTE_SIGS;
                     io_async_exchange_ok();
                     break;
                 case TXN_ERROR:
@@ -182,7 +144,7 @@ unsigned int custom_screen_prepro(const bagl_element_t *element) {
             os_memcpy(element->text, global.transactionContext.out_address + current_offset, SCREEN_MAX_CHARS - 1);
             ((char *) element->text)[SCREEN_MAX_CHARS] = '\0';
 
-            screen_printf("element->text: %s\n", element->text);
+//            screen_printf("element->text: %s\n", element->text);
 
             current_offset += direction;
 

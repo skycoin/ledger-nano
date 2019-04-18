@@ -71,6 +71,7 @@ typedef enum {
     TXN_START_OUT,
     TXN_OUT,
     TXN_READY,
+    TXN_COMPUTE_SIGS,
     TXN_RET_SIGS,
     TXN_ERROR,
     TXN_FINISHED
