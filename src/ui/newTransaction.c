@@ -49,13 +49,13 @@ void prepare_output_approval() {
 // Handler for buttons pressed action
 unsigned int bagl_custom_text_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
+        case BUTTON_EVT_FAST | BUTTON_LEFT:
             screen_printf("Cancel TX signing process\n");
 
             ui_idle();
             break;
-        case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: {
+        case BUTTON_EVT_FAST | BUTTON_RIGHT:
+        case BUTTON_EVT_FAST | BUTTON_LEFT | BUTTON_RIGHT: {
             screen_printf("Right button was pressed\n");
 
             signTxnContext_t *ctx = &global.signTxnContext;
