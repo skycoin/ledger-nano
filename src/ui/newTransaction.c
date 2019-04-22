@@ -36,7 +36,22 @@ void prepare_output_approval() {
 
     // Amount of SKY to send
     char tmp_amount[SCREEN_MAX_CHARS];
-    SPRINTF(tmp_amount, "%d.%d", cur_out->coin_num / 1000, cur_out->coin_num % 1000);
+    char tmp_amount_mantis[SCREEN_MAX_CHARS];
+
+    // we are getting the amount of SKY multiplied by 10^6 but have to show it as it was initially(with floating-point)
+    // Ledger does not support floating point, so we need to get decimal and float part by using integer operations (/ and %)
+    int decimal_amount = (int) (cur_out->coin_num / 1000000);
+    int amount_mantis = (int) (cur_out->coin_num % 1000000);
+
+    // the problem is when we got e.g. 3030000 (3.03 SKY),
+    // then decimal part -> 3, mantis -> 30000
+    // but we need to have leading zero before mantis, so we check the size of mantis and if it's less then 99999 (10^6 - 1) then add that zero
+    // NOTE: it works ONLY because of assumption that in Skycoin we do not use fractions less than 0.01
+    if(amount_mantis < 99999)
+        SPRINTF(tmp_amount, "%d.0%d", decimal_amount, amount_mantis);
+    else
+        SPRINTF(tmp_amount, "%d.%d", decimal_amount, amount_mantis);
+        
     os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount) + 1);
     screen_printf("amount: %s\n", global.transactionContext.amount);
 }
