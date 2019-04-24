@@ -3,6 +3,7 @@
 #include "apdu_handlers.h"
 
 static signTxnContext_t *ctx = &global.signTxnContext;
+//char info_text[SCREEN_MAX_CHARS];
 
 handler_fn_t *lookupHandler(uint8_t ins) {
     switch (ins) {
@@ -122,6 +123,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                 case TXN_ERROR:
                     ctx->initialized = false;
                     io_async_exchange_error();
+                    show_message("Error happened\0", 15);
                     break;
                 case TXN_OUT:
                     prepare_output_approval();
@@ -131,9 +133,9 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     io_async_exchange_ok();
                     break;
                 case TXN_FINISHED:
-                    io_async_exchange_ok();
-                    ui_idle();
                     ctx->initialized = false;
+                    io_async_exchange_ok();
+                    show_message("Success\0", 8);
                     break;
                 default:
                     io_async_exchange_ok();
@@ -144,7 +146,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
     } else {
         ctx->initialized = false;
         io_async_exchange_error();
-        ui_idle();
+        show_message("Error happened\0", 15);
     }
     *flags |= IO_ASYNCH_REPLY;
 }

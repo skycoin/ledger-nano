@@ -7,8 +7,6 @@
 #include "../skycoin-api/skycoin_crypto.h"
 #include "../apdu_handlers.h"
 
-#include "string.h"
-
 #include "os_io_seproxyhal.h"
 
 // UI struct for screen with custom screen (e.g. You got new TX)

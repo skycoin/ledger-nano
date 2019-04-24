@@ -1,7 +1,5 @@
 #include "newTransaction.h"
 
-#include "string.h"
-
 // UI struct for screen with custom screen (e.g. You got new TX)
 const bagl_element_t bagl_custom_text[] = {
         UI_BACKGROUND(),

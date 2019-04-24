@@ -2,6 +2,7 @@
 #define SKYCOIN_APDU_HANDLERS_H
 
 #include "ui/newTransaction.h"
+#include "ui/info_message.h"
 #include "skycoin-api/skycoin_crypto.h"
 #include "skycoin-api/txn.h"
 #include "ux.h"
