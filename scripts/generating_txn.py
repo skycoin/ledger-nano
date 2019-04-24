@@ -52,9 +52,9 @@ def createRawTransaction(inputs, outputs):
     txn = length + txn
     return txn
 
-outputs = [Output("LtdGkoRPyvBASvZZ7WJWUBSgosfCUjmkYo", 123.555, 1),
-           Output("hbWbgT97s7RoGEfqoiiJgV5pkdaAsBow3o", 1.31, 1),
-           Output("2cPurVYpW1MCqk7cjNjqDG531BoRCgJ8iTD", 3.01, 1),
+outputs = [Output("LtdGkoRPyvBASvZZ7WJWUBSgosfCUjmkYo", 0.01, 1),
+           Output("hbWbgT97s7RoGEfqoiiJgV5pkdaAsBow3o", 0.01, 1),
+           Output("2cPurVYpW1MCqk7cjNjqDG531BoRCgJ8iTD", 0.01, 1),
            Output("qGJNvH2LM1jrawo1ZggreLYaTpwUXCkzWh", 0.01, 1),
            Output("HiDEhbBdNu2pSb3pbTLKKSbjWaqJTQWsAi", 0.01, 1),
            Output("2x5dAJzZQzKHQNKwrGCYz8cvehxDWMp7i1", 0.01, 1),

@@ -39,8 +39,8 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
         }
         case TXN_IN: {
             // 32 bytes are input + 4 bytes address_index of BIP44 address
-            screen_printf("TXN_IN dataLength: %d\n", ctx->dataLength);
-            screen_printf("TXN_IN cur_ob: %d\n\n", ctx->curr_obj);
+//            screen_printf("TXN_IN dataLength: %d\n", ctx->dataLength);
+//            screen_printf("TXN_IN cur_ob: %d\n\n", ctx->curr_obj);
 
             if (ctx->offset + ctx->dataLength < 36) {
                 save_data_to_buffer();
@@ -51,7 +51,7 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
                 cx_hash(&ctx->hash.header, 0, ctx->buffer, 32, NULL);
                 os_memmove(ctx->txn.sig_input[ctx->curr_obj].input, ctx->buffer, 36);
 
-                PRINTF("input %.*H\n", 36, ctx->txn.sig_input[ctx->curr_obj].input);
+//                PRINTF("input %.*H\n", 36, ctx->txn.sig_input[ctx->curr_obj].input);
                 ctx->curr_obj += 1;
             }
             if (ctx->curr_obj == ctx->txn.in_num) {
@@ -60,7 +60,7 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
             break;
         }
         case TXN_START_OUT: {
-            screen_printf("TXN_START_OUT dataLength: %d\n", ctx->dataLength);
+//            screen_printf("TXN_START_OUT dataLength: %d\n", ctx->dataLength);
 
             if (ctx->dataLength < 4) {
                 save_data_to_buffer();
@@ -77,7 +77,7 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
             break;
         }
         case TXN_OUT: {
-            screen_printf("\nTXT_OUT dataLength: %d\n", ctx->dataLength);
+//            screen_printf("\nTXT_OUT dataLength: %d\n", ctx->dataLength);
 
             if (ctx->curr_obj == ctx->txn.out_num) {
                 ctx->txn_state = TXN_READY;
@@ -99,7 +99,7 @@ static void __txn_next_elem(signTxnContext_t *ctx) {
 
                 ctx->curr_obj += 1;
 
-                screen_printf("Cur object %d %d\n", ctx->curr_obj, ctx->dataLength);
+//                screen_printf("Cur object %d %d\n", ctx->curr_obj, ctx->dataLength);
                 if (ctx->curr_obj == ctx->txn.out_num) {
                     cx_hash(&ctx->hash.header, CX_LAST, ctx->buffer, 37, ctx->txn.inner_hash);
                 } else {
