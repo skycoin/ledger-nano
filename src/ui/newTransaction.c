@@ -17,7 +17,7 @@ const bagl_element_t bagl_custom_text[] = {
 };
 
 void prepare_output_approval() {
-    screen_printf("Preparing data for output approval screen\n");
+//    screen_printf("Preparing data for output approval screen\n");
     signTxnContext_t *ctx = &global.signTxnContext;
 
     // current output (e.g. "1/6")
@@ -25,7 +25,7 @@ void prepare_output_approval() {
     char tmp_cur_out[SCREEN_MAX_CHARS];
     SPRINTF(tmp_cur_out, "%d/%d", ctx->curr_obj, ctx->txn.out_num);
     os_memmove(global.transactionContext.current_output_display, tmp_cur_out, strlen(tmp_cur_out) + 1);
-    screen_printf("current_output_display: %s\n", global.transactionContext.current_output_display);
+    screen_printf("\ncurrent_output_display: %s\n", global.transactionContext.current_output_display);
 
     // address
     char address[36];
@@ -36,7 +36,6 @@ void prepare_output_approval() {
 
     // Amount of SKY to send
     char tmp_amount[SCREEN_MAX_CHARS];
-    char tmp_amount_mantis[SCREEN_MAX_CHARS];
 
     // we are getting the amount of SKY multiplied by 10^6 but have to show it as it was initially(with floating-point)
     // Ledger does not support floating point, so we need to get decimal and float part by using integer operations (/ and %)
@@ -45,13 +44,11 @@ void prepare_output_approval() {
 
     // the problem is when we got e.g. 3030000 (3.03 SKY),
     // then decimal part -> 3, mantis -> 30000
-    // but we need to have leading zero before mantis, so we check the size of mantis and if it's less then 99999 (10^6 - 1) then add that zero
-    // NOTE: it works ONLY because of assumption that in Skycoin we do not use fractions less than 0.01
-    if(amount_mantis < 99999)
-        SPRINTF(tmp_amount, "%d.0%d", decimal_amount, amount_mantis);
-    else
-        SPRINTF(tmp_amount, "%d.%d", decimal_amount, amount_mantis);
-        
+    SPRINTF(tmp_amount, "%d.%06d", decimal_amount, amount_mantis);
+    // Delete zeros at the end
+    while (tmp_amount[strlen(tmp_amount) - 1] == '0')
+        tmp_amount[strlen(tmp_amount) - 1] = '\0';
+
     os_memmove(global.transactionContext.amount, tmp_amount, strlen(tmp_amount) + 1);
     screen_printf("amount: %s\n", global.transactionContext.amount);
 }
