@@ -1,7 +1,7 @@
 #include "newTransaction.h"
 
 // UI struct for screen with custom screen (e.g. You got new TX)
-const bagl_element_t bagl_custom_text[] = {
+const bagl_element_t transaction_screen[] = {
         UI_BACKGROUND(),
 
         UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_CROSS),
@@ -37,8 +37,8 @@ void prepare_output_approval() {
 
     // we are getting the amount of SKY multiplied by 10^6 but have to show it as it was initially(with floating-point)
     // Ledger does not support floating point, so we need to get decimal and float part by using integer operations (/ and %)
-    int decimal_amount = (int) (cur_out->coin_num / 1000000);
-    int amount_mantis = (int) (cur_out->coin_num % 1000000);
+    int decimal_amount = (int) (cur_out->coin_num / SKY_COINS); // SKY_COINS -> 1000000
+    int amount_mantis = (int) (cur_out->coin_num % SKY_COINS);
 
     // the problem is when we got e.g. 3030000 (3.03 SKY),
     // then decimal part -> 3, mantis -> 30000
@@ -52,7 +52,7 @@ void prepare_output_approval() {
 }
 
 // Handler for buttons pressed action
-unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long button_mask_counter) {
+unsigned int transaction_screen_button(unsigned long button_mask, unsigned long button_mask_counter) {
     switch (button_mask) {
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
             screen_printf("Cancel TX signing process\n");
@@ -113,7 +113,7 @@ unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long bu
 // we have 2 lines: info(Address or SKY) and description(actual/specific value)
 // if currently we are displaying address, then we wait until it goes forward and backward
 // and then switch to the screen with SKY, where we just display amount of SKY(statically)
-unsigned int custom_screen_prepro(const bagl_element_t *element) {
+unsigned int transaction_screen_prepro(const bagl_element_t *element) {
     // 83 -> out_address_or_amount line1
     // 80 -> info_line line2
     if (global.signTxnContext.txn_state == TXN_OUT) {
@@ -150,9 +150,6 @@ unsigned int custom_screen_prepro(const bagl_element_t *element) {
                 UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
             }
         }
-
-        // prepare_current_output_for_display();
-
     } else { // it should be just a plain text screen, so hide icons
         if (element->component.userid == 0x01 || element->component.userid == 0x02 ||
             element->component.userid == 0x11) {
@@ -165,7 +162,7 @@ unsigned int custom_screen_prepro(const bagl_element_t *element) {
     return 1;
 }
 
-void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size, unsigned char *second_line,
+void go_to_transaction_screen(unsigned char *first_line, unsigned int first_size, unsigned char *second_line,
                               unsigned int second_size) {
     os_memmove(global.transactionContext.custom_text_line_1, first_line, MIN(first_size, SCREEN_MAX_CHARS));
     os_memmove(global.transactionContext.custom_text_line_2, second_line, MIN(second_size, SCREEN_MAX_CHARS));
@@ -177,5 +174,5 @@ void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size
     current_offset = 0;
     direction = 1;
 
-    UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
+    UX_DISPLAY(transaction_screen, transaction_screen_prepro);
 }

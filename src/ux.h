@@ -14,6 +14,8 @@
 #define SCROLLING_TEXT_DELAY 300 // Delay for scrolling text, before the next iteration(movement) will be done (in milliseconds) 
 #define SCROLLING_TEXT_BIG_DELAY 1200 //  Big delay (e.g. for a longer stop in the beginning and in the end)
 
+#define SKY_COINS 1000000 // the number of coins, 1 SKY is consist of 
+
 // display stepped screens
 extern unsigned int ux_step;
 extern unsigned int ux_step_count;

@@ -10,16 +10,16 @@
 #include "os_io_seproxyhal.h"
 
 // UI struct for screen with custom screen (e.g. You got new TX)
-extern const bagl_element_t bagl_custom_text[6];
+extern const bagl_element_t transaction_screen[6];
 
 void prepare_output_approval();
 
 // Handler for buttons pressed action
-unsigned int bagl_custom_text_button(unsigned long button_mask, unsigned long button_mask_counter);
+unsigned int transaction_screen_button(unsigned long button_mask, unsigned long button_mask_counter);
 
-unsigned int custom_screen_prepro(const bagl_element_t *element);
+unsigned int transaction_screen_prepro(const bagl_element_t *element);
 
-void go_to_custom_text_screen(unsigned char *first_line, unsigned int first_size, unsigned char *second_line,
+void go_to_transaction_screen(unsigned char *first_line, unsigned int first_size, unsigned char *second_line,
                               unsigned int second_size);
 
 #endif

@@ -116,7 +116,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
 
 
     if (!ctx->initialized && p1 == 0x0) {
-        go_to_custom_text_screen("You received\0", 13, "new transaction\0", 16);
+        go_to_transaction_screen("You received\0", 13, "new transaction\0", 16);
     } else if (ctx->initialized && p1 == 0x1) {
         if (ctx->txn_state < TXN_START_OUT || ctx->txn_state == TXN_RET_SIGS || ctx->txn_state == TXN_COMPUTE_SIGS) {
             switch (txn_next_elem(ctx)) {
@@ -127,7 +127,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     break;
                 case TXN_OUT:
                     prepare_output_approval();
-                    UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
+                    UX_DISPLAY(transaction_screen, transaction_screen_prepro);
                     break;
                 case TXN_PARTIAL:
                     io_async_exchange_ok();
@@ -141,7 +141,7 @@ void handleSignTxn(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
                     io_async_exchange_ok();
             }
         } else {
-            UX_DISPLAY(bagl_custom_text, custom_screen_prepro);
+            UX_DISPLAY(transaction_screen, transaction_screen_prepro);
         }
     } else {
         ctx->initialized = false;
