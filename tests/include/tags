@@ -1,0 +1,45 @@
+!_TAG_FILE_SORTED	2	/0=unsorted, 1=sorted, 2=foldcase/
+acc	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    unsigned char acc[8 * 4];$/;"	m	language:C++	struct:cx_sha256_s
+algo	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    cx_md_t algo;$/;"	m	language:C++	struct:cx_hash_header_s
+blen	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    int blen;$/;"	m	language:C++	struct:cx_sha256_s
+block	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    unsigned char block[64];$/;"	m	language:C++	struct:cx_sha256_s
+counter	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    unsigned int counter;$/;"	m	language:C++	struct:cx_hash_header_s
+CX_BLAKE2B	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_BLAKE2B,$/;"	e	language:C++	enum:cx_md_e
+CX_CURVE_256K1	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	77;"	d	language:C++
+CX_ECCINFO_PARITY_ODD	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	79;"	d	language:C++
+CX_ECCINFO_xGTn	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	80;"	d	language:C++
+cx_ecfp_private_key_t	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^typedef int cx_ecfp_private_key_t;$/;"	t	language:C++
+cx_ecfp_public_key_t	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^typedef int cx_ecfp_public_key_t;$/;"	t	language:C++
+CX_GROESTL	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_GROESTL,$/;"	e	language:C++	enum:cx_md_e
+cx_hash_header_s	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^struct cx_hash_header_s {$/;"	s	language:C++
+cx_hash_t	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^typedef struct cx_hash_header_s cx_hash_t;$/;"	t	language:C++	typeref:struct:cx_hash_header_s
+CX_KECCAK	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_KECCAK, \/\/ 28,32,48,64 bytes$/;"	e	language:C++	enum:cx_md_e
+CX_LAST	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	76;"	d	language:C++
+cx_md_e	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^enum cx_md_e {$/;"	g	language:C++
+cx_md_t	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^typedef enum cx_md_e cx_md_t;$/;"	t	language:C++	typeref:enum:cx_md_e
+CX_NONE	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_NONE,$/;"	e	language:C++	enum:cx_md_e
+CX_RIPEMD160	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_RIPEMD160, \/\/ 20 bytes$/;"	e	language:C++	enum:cx_md_e
+cx_ripemd160_t	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^typedef struct cx_sha256_s cx_ripemd160_t;$/;"	t	language:C++	typeref:struct:cx_sha256_s
+CX_RND_RFC6979	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	78;"	d	language:C++
+CX_SHA224	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_SHA224, \/\/ 28 bytes$/;"	e	language:C++	enum:cx_md_e
+CX_SHA256	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_SHA256, \/\/ 32 bytes$/;"	e	language:C++	enum:cx_md_e
+cx_sha256_s	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^struct cx_sha256_s {$/;"	s	language:C++
+cx_sha256_t	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^typedef struct cx_sha256_s cx_sha256_t;$/;"	t	language:C++	typeref:struct:cx_sha256_s
+CX_SHA3	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_SHA3, \/\/ 28,32,48,64 bytes$/;"	e	language:C++	enum:cx_md_e
+CX_SHA384	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_SHA384, \/\/ 48 bytes$/;"	e	language:C++	enum:cx_md_e
+CX_SHA3_XOF	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_SHA3_XOF, \/\/ any bytes$/;"	e	language:C++	enum:cx_md_e
+CX_SHA512	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    CX_SHA512, \/\/ 64 bytes$/;"	e	language:C++	enum:cx_md_e
+elements_count	/home/midren/Documents/bolos/ledger-nano/tests/include/os_io_seproxyhal.h	/^    unsigned int elements_count;$/;"	m	language:C++	struct:__anon1
+header	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^    struct cx_hash_header_s header;$/;"	m	language:C++	struct:cx_sha256_s	typeref:struct:cx_sha256_s::cx_hash_header_s
+len	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^                    unsigned int len, unsigned char *out PLENGTH(out_len)) {$/;"	v	language:C++
+mode	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^                    int mode, const unsigned char WIDE *in PLENGTH(len),$/;"	v	language:C++
+NEW_CX	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	2;"	d	language:C++
+OS_IO_SEPROXYHAL_H	/home/midren/Documents/bolos/ledger-nano/tests/include/os_io_seproxyhal.h	2;"	d	language:C++
+PLENGTH	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^                    int mode, const unsigned char WIDE *in PLENGTH(len),$/;"	p	language:C++
+PLENGTH	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^                    unsigned int len, unsigned char *out PLENGTH(out_len)) {$/;"	f	language:C++
+PLENGTH	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	/^void cx_hash(cx_hash_t *hash PLENGTH(scc__cx_scc_struct_size_hash__hash),$/;"	p	language:C++
+PLENGTH	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	41;"	d	language:C++
+REENTRANT	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	46;"	d	language:C++
+ux_state_t	/home/midren/Documents/bolos/ledger-nano/tests/include/os_io_seproxyhal.h	/^} ux_state_t;$/;"	t	language:C++	typeref:struct:__anon1
+WIDE	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	44;"	d	language:C++
+WIDE_AS_INT	/home/midren/Documents/bolos/ledger-nano/tests/include/cx.h	45;"	d	language:C++

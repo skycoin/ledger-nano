@@ -111,7 +111,7 @@ dep/%.d: %.c Makefile
 
 TEST_LDFLAGS = -O3 -Os -w
 TEST_LDLIBS = -lgcc -lc -lcheck -pthread -lcheck_pic -lsubunit -lrt -lm
-TEST_INLUDEPATH = -I $(BOLOS_SDK)/include  
+TEST_INLUDEPATH = -I tests/include  
 TEST_LD = gcc
 TEST_SOURCE_PATH = tests
 TEST_OBJ_PATH = tests

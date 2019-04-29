@@ -1,5 +1,7 @@
 #include <check.h>
 
+#include "bolos_replacement.h"
+
 
 /*
   each entry of this 
