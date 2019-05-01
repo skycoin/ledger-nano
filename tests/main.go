@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello!")
+	ledger.DEBUG = true
 
 	var nanos *ledger.NanoS
 	nanos, err := ledger.OpenNanoS()
@@ -16,5 +16,6 @@ func main() {
 		log.Fatalln("Couldn't open device:", err)
 	}
 
+	// fmt.Println(nanos.GetPublicKey(0x80000000, 0x00000000))
 	fmt.Println(nanos.GetVersion())
 }
