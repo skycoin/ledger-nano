@@ -38,7 +38,7 @@ func TestGetPublicKey(t *testing.T) {
 	publicKey, errGetPublicKey := nanos.GetPublicKey(account, index)
 	require.NoError(t, errGetPublicKey, "Error while getting public key")
 
-	fmt.Printf("Skycoin app version (account=%d, index=%d): %s\n", account, index, publicKey.Hex())
+	fmt.Printf("Public key (account=%d, index=%d): %s\n", account, index, publicKey.Hex())
 }
 
 func TestGetAddress(t *testing.T) {
@@ -54,6 +54,20 @@ func TestGetAddress(t *testing.T) {
 	require.NoError(t, address.Verify(pk), "Address is not valid for the public key which was returned by ledger")
 
 	fmt.Printf("Address (account=%d, index=%d): %s\n", account, index, address.String())
+}
+
+func TestGetSignedPublicKey(t *testing.T) {
+	var account, index uint32
+	account, index = 0x80000000, 0x00000000
+
+	pk, errGetPublicKey := nanos.GetPublicKey(account, index)
+	require.NoError(t, errGetPublicKey, "Error while getting public key")
+
+	hash := cipher.MustSHA256FromHex(pk.Hex())
+	signedPK, errGetSignedPublicKey := nanos.GetSignedPublicKey(account, index)
+	require.NoError(t, errGetSignedPublicKey, "Error while getting signed public key")
+
+	require.NoError(t, cipher.VerifyPubKeySignedHash(pk, signedPK, hash), "Signature is not valid for the given public key")
 }
 
 func TestTransactionSigning(t *testing.T) {
