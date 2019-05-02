@@ -3,8 +3,8 @@
 
 #include "os_io_seproxyhal.h"
 
-#include "sky.h"
-#include "main_ui.h"
+#include "skycoin-api/skycoin_crypto.h"
+#include "ui/main_ui.h"
 #include "ux.h"
 
 #include "apdu_handlers.h"
@@ -16,7 +16,9 @@ static void sky_main(void) {
     volatile unsigned int tx = 0;
     volatile unsigned int flags = 0;
 
-    os_memmove(global.getPublicKeyContext.address, "  No address generated yet         \0", 36); // set default value for address 
+    os_memmove(global.getPublicKeyContext.address, "No address generated yet\0", 25); // set default value for address 
+
+    global.signTxnContext.initialized = 0;
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.
@@ -46,6 +48,7 @@ static void sky_main(void) {
 
                         // Find function that will handle specific request
                         handler_fn_t *handlerFn = lookupHandler(G_io_apdu_buffer[OFFSET_INS]);
+//                        screen_printf("inst: %x\n", G_io_apdu_buffer[OFFSET_INS]);
                         if (!handlerFn) {
                             THROW(0x6D00);
                         }
@@ -95,7 +98,7 @@ __attribute__((section(".boot"))) int main(void) {
                     sky_main();
             }
             CATCH_OTHER(e) {
-            }   
+            }
             FINALLY {
             }
     }

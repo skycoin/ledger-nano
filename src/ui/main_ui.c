@@ -7,6 +7,9 @@ unsigned int ux_step;
 unsigned int ux_step_count;
 uint8_t ux_loop_over_curr_element; // only for Nano S
 
+int current_offset;
+int direction;
+
 // ********************************************************************************
 // Main menu with settings, about, version app and ability to quit the app
 // ********************************************************************************

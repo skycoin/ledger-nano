@@ -1,34 +1,35 @@
-#include "sky.h"
+#include "skycoin_crypto.h"
 
 #define INS_RET_WRONG_DATA 0x6A80
 
-void get_bip44_path(uint8_t *dataBuffer, unsigned int bip44_path[]) {
+void get_bip44_path(uint8_t *dataBuffer) {
     for (uint32_t i = 0; i < BIP44_PATH_LEN; i++) {
         // First bit in purpose, cont_type and account should be 1
         if (i < 3 && !((dataBuffer[0] >> 7) & 1)) {
             THROW(INS_RET_WRONG_DATA);
         }
-        bip44_path[i] = U4BE(dataBuffer, 0);
+        global.getPublicKeyContext.bip44_path[i] = U4BE(dataBuffer, 0);
         dataBuffer += 4;
     }
     // TODO: Add validation for coin_type, when SkyCoin will get one
 
     // Purpose should be 44
-    if ((bip44_path[0] & ~(1 << 31)) != 44) {
+    if ((global.getPublicKeyContext.bip44_path[0] & ~(1 << 31)) != 44) {
         THROW(INS_RET_WRONG_DATA);
     }
     // Account(excluding first byte) should be in range [0, 10),
-    if ((bip44_path[2] & ~(1 << 31)) > 9) {
+    if ((global.getPublicKeyContext.bip44_path[2] & ~(1 << 31)) > 9) {
         THROW(INS_RET_WRONG_DATA);
     }
     // Change should be 0 or 1
-    if ((bip44_path[3] & ~1) > 0) {
+    if ((global.getPublicKeyContext.bip44_path[3] & ~1) > 0) {
         THROW(INS_RET_WRONG_DATA);
     }
     // Address_index should be in range [0, 1000)
-    if (bip44_path[4] > 999) {
+    if (global.getPublicKeyContext.bip44_path[4] > 999) {
         THROW(INS_RET_WRONG_DATA);
     }
+
 }
 
 int encode_base_58(const unsigned char *pbegin, int len, char *result) {
@@ -70,6 +71,22 @@ int encode_base_58(const unsigned char *pbegin, int len, char *result) {
     while (j != size)
         result[i++] = BASE_58_ALPHABET[b58[j++]];
     result[i] = '\0';
+}
+
+void address_to_base58(const unsigned char *address, char *result) {
+    static cx_sha256_t address_hash;
+
+    os_memmove(result, address + 1, RIPMD_HASH_LEN);
+    result[20] = address[0];
+
+    // add checksum to address
+    unsigned char checksum[SHA256_HASH_LEN];
+    cx_sha256_init(&address_hash);
+    cx_hash(&address_hash.header, CX_LAST, result, 21, checksum);
+    os_memmove(result + 21, checksum, 4);
+
+    //encode address to base58
+    encode_base_58(result, ADDRESS_LEN, result);
 }
 
 void to_address(const unsigned char *public_key_compressed, char *result) {
@@ -188,7 +205,8 @@ void convert_signature_from_TLV_to_RS(const unsigned char *tlv_signature, unsign
     const int offset_before_S = 2; // skip 4 bytes for type|length|x02|R length
 
     os_memmove(dst, tlv_signature + offset_before_R + r_offset, 32); // skip first bytes and store the `R` part
-    os_memmove(dst + 32, tlv_signature + offset_before_R + 32 + offset_before_S + r_offset + s_offset, 32); // skip unused bytes and store the `S` part 
+    os_memmove(dst + 32, tlv_signature + offset_before_R + 32 + offset_before_S + r_offset + s_offset,
+               32); // skip unused bytes and store the `S` part
 }
 
 

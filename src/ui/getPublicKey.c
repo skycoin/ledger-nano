@@ -1,6 +1,6 @@
 #include "main_ui.h"
-#include "ux.h"
-#include "sky.h"
+#include "../ux.h"
+#include "../skycoin-api/skycoin_crypto.h"
 
 #include "string.h"
 
@@ -10,7 +10,7 @@
 // UI struct for screen with address(derived from pk)
 static const bagl_element_t bagl_ui_address[] = {
     UI_BACKGROUND(),
-    UI_TEXT(0x83, 16, 20, 100, global.getPublicKeyContext.address_copy),
+    UI_TEXT(0x83, 21, 20, 95, global.getPublicKeyContext.address_copy),
     UI_ICON_LEFT(0x00, BAGL_GLYPH_ICON_CROSS)
 };
 
@@ -25,27 +25,24 @@ static unsigned int bagl_ui_address_button(unsigned int button_mask, unsigned in
 	return 0;
 }
 
-// Helper function to be used later for scrolling text 
-void swap_str_elems(void* str, int from, int to){
-    char tmp = ((char *) str)[from];
-    ((char *) str)[to] = ((char *) str)[from];
-    ((char *) str)[from] = tmp;
-}
-
 // Preprocessor for address screen
 // Each iteration it "moves" the text of `address` so it looks like scrolling-text
-int current_offset, direction;
 unsigned int ui_address_scrolling_text_prepro(const bagl_element_t *element) {
     if(element->component.userid == 0x83) {
         strcpy(element->text, global.getPublicKeyContext.address + current_offset);
         ((char *) element->text) [SCREEN_MAX_CHARS] = '\0';        
 
         current_offset += direction;
-
-        if(current_offset == 0 || (current_offset + SCREEN_MAX_CHARS == 40))
+        // firstly we update current_offset, then wait and after that copy and change the string 
+        // so check equality with -1, but not with 0
+        // the same with (current_offset + SCREEN_MAX_CHARS) and strlen
+        if(current_offset == -1 || (current_offset + SCREEN_MAX_CHARS == (strlen(global.getPublicKeyContext.address) + 1))){  
             direction *= -1;
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_BIG_DELAY); // wait more if we change direction
+        } else {
+            UX_CALLBACK_SET_INTERVAL(SCROLLING_TEXT_DELAY);
+        }
 
-        UX_CALLBACK_SET_INTERVAL(300);
     }
 
     return 1;

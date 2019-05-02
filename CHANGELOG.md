@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Travis CI
+- App menu(UI)
+- App version (APDU + UI)
+- App icon
+- BIP44 support
+- Public/private keys generation
+- Signed public key (APDU)
+- Address generation (APDU + UI)
+- Transaction signing (APDU + UI)
+- Python scripts for testing all APDU requests
+- WIKI documentation about Cryptography + APDU requests
+
 
 ### Fixed
 
