@@ -65,9 +65,12 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     get_bip44_path(dataBuffer);
     derive_keypair(global.getPublicKeyContext.bip44_path, NULL, &public_key);
 
+    unsigned char compressed_pk[COMPRESSED_PK_LEN];
+    compress_public_key(&public_key.W, compressed_pk);
+
     // push the public key onto the response buffer.
-    os_memmove(G_io_apdu_buffer, public_key.W, PK_LEN);
-    *tx += PK_LEN;
+    os_memmove(G_io_apdu_buffer, compressed_pk, COMPRESSED_PK_LEN);
+    *tx += COMPRESSED_PK_LEN;
 
     THROW(INS_RET_SUCCESS);
 }

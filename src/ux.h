@@ -5,7 +5,7 @@
 #include "cx.h"
 #include "os_io_seproxyhal.h"
 #include "stdbool.h"
-//#include "skycoin-api/txn.h"
+#include "stdint.h"
 
 #define BIP44_PATH_LEN 5 // length of BIP44 path
 #define BIP44_BYTE_LENGTH (BIP44_PATH_LEN * sizeof(unsigned int)) // length of BIP44 path, in bytes

@@ -104,3 +104,25 @@ help:  ## help: Help
 
 # Import generic rules from the SDK
 include $(BOLOS_SDK)/Makefile.rules
+
+
+# add dependency on custom makefile filename
+dep/%.d: %.c Makefile
+
+TEST_LDFLAGS = -O3 -Os -w
+TEST_LDLIBS = -lgcc -lc -lcheck -pthread -lcheck_pic -lsubunit -lrt -lm
+TEST_INLUDEPATH = -I tests/include  
+TEST_LD = gcc
+TEST_SOURCE_PATH = tests
+TEST_OBJ_PATH = tests
+TEST_DEFINES = -D IO_USB_MAX_ENDPOINTS=7 -D IO_HID_EP_LENGTH=64 -D HAVE_USB_APDU -DUNIT_TEST
+TEST_COMMON_SOURCES = src/skycoin-api/skycoin_crypto.c
+
+test:
+	# compile tests and run them
+	$(TEST_LD) -o $(TEST_OBJ_PATH)/signature_test.o $(TEST_SOURCE_PATH)/signature_test.c $(TEST_COMMON_SOURCES) $(TEST_LDFLAGS) $(TEST_LDLIBS) $(TEST_INLUDEPATH) $(TEST_DEFINES)
+
+	$(TEST_OBJ_PATH)/signature_test.o
+
+test_clean:
+	rm -rf $(TEST_OBJ_PATH)/signature_test.o

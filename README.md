@@ -43,3 +43,9 @@ make delete
 ```
 make clean
 ```
+
+### Run tests
+You need to be inside `tests` directory, ledger should be plugged in your computer with opened Skycoin app 
+```
+go test -v 
+```
